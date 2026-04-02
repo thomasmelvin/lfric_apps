@@ -258,7 +258,7 @@
         "mpi_parts_xios" : 16,
     }) %}
 
-{% elif task_ns.conf_name == "nwp_gal9-C896_MG" %}
+{% elif task_ns.conf_name == "nwp_gal9-C896_MG_old" %}
 
     {% do task_dict.update({
         "opt_confs": ["um_dump"],
@@ -459,18 +459,20 @@
 
     {% do task_dict.update({
         "CXI_MATCH_hybrid": true,
-        "opt_confs": ["um_dump"],
+        "opt_confs": ["um_dump", "oper_diags_hres"],
         "resolution": "C896_MG",
         "DT": 240,
-        "tsteps": 120,
-        "wallclock": 15,
-        "mpi_parts": 4704,
-        "xios_nodes": 4,
-        "mpi_parts_xios" : 128,
+        "tsteps": 360,
+        "wallclock": 20,
+        "mpi_parts": 12544,
+        "xios_nodes": 10,
+        "mpi_parts_xios" : 480,
         "log_level": "info",
         "log_to_rank_zero_only": ".true.",
-        "memory_plot_ex": true,
-        "plot_str": "plot_map.py $NODAL_DATA_DIR/lfric_diagnostics.nc  $PLOT_DIR",
+        "memory_plot_ex": false,
+        "panel_decomp": "custom",
+        "xproc": 112,
+        "yproc": 56,
     }) %}
 
 {# ###################################################################### #}
@@ -1209,6 +1211,44 @@
         "opt_confs": ["um_dump","oper_diags_hres"],
     }) %}
 
+{% endif %}
+
+{% if task_ns.conf_name.startswith("nwp_gal9-C896_MG_dt5") %}
+
+    {% do task_dict.update({
+        "DT": 300,
+        "tsteps": 288,
+    }) %}
+{% endif %}
+
+{% if task_ns.conf_name.startswith("nwp_gal9-C896_MG_dt6") %}
+
+    {% do task_dict.update({
+        "DT": 360,
+        "tsteps": 240,
+    }) %}
+{% endif %}
+
+{% if task_ns.conf_name.startswith("nwp_gal9-C896_MG_omp2") %}
+
+    {% do task_dict.update({
+        "mpi_parts": 6272,
+        "panel_decomp": "custom",
+        "xproc": 56,
+        "yproc": 56,
+        "threads": 2,
+    }) %}
+{% endif %}
+
+{% if task_ns.conf_name.startswith("nwp_gal9-C896_MG_omp4") %}
+
+    {% do task_dict.update({
+        "mpi_parts": 3136,
+        "panel_decomp": "custom",
+        "xproc": 56,
+        "yproc": 28,
+        "threads": 4,
+    }) %}
 {% endif %}
 
 
