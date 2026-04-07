@@ -1216,6 +1216,7 @@
 {% if task_ns.conf_name.startswith("nwp_gal9-C896_MG_dt5") %}
 
     {% do task_dict.update({
+        "opt_confs": ["um_dump", "oper_diags_hres", "nrad_dt300"],
         "DT": 300,
         "tsteps": 288,
     }) %}
@@ -1224,6 +1225,7 @@
 {% if task_ns.conf_name.startswith("nwp_gal9-C896_MG_dt6") %}
 
     {% do task_dict.update({
+        "opt_confs": ["um_dump", "oper_diags_hres", "nrad_dt360"],
         "DT": 360,
         "tsteps": 240,
     }) %}
@@ -1237,6 +1239,7 @@
         "xproc": 56,
         "yproc": 56,
         "threads": 2,
+        "wallclock": 25,
     }) %}
 {% endif %}
 
@@ -1248,6 +1251,7 @@
         "xproc": 56,
         "yproc": 28,
         "threads": 4,
+        "wallclock": 30,
     }) %}
 {% endif %}
 
