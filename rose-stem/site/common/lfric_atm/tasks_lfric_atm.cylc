@@ -459,7 +459,7 @@
 
     {% do task_dict.update({
         "CXI_MATCH_hybrid": true,
-        "opt_confs": ["um_dump", "oper_diags_hres"],
+        "opt_confs": ["um_dump", "oper_diags_hres", "physics_segmentation"],
         "resolution": "C896_MG",
         "DT": 240,
         "tsteps": 360,
