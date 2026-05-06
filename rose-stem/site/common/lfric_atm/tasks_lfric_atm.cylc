@@ -472,6 +472,23 @@
         "yproc": 56,
     }) %}
 
+{% elif task_ns.conf_name.startswith("nwp_gal9-37node-C896_MG") %}
+
+    {% do task_dict.update({
+        "CXI_MATCH_hybrid": true,
+        "opt_confs": ["um_dump", "oper_diags_hres", "physics_segmentation"],
+        "resolution": "C896_MG",
+        "DT": 240,
+        "tsteps": 360,
+        "wallclock": 80,
+        "mpi_parts": 4704,
+        "xios_nodes": 10,
+        "mpi_parts_xios" : 480,
+        "log_level": "info",
+        "log_to_rank_zero_only": ".true.",
+        "memory_plot_ex": false,
+    }) %}
+
 {# ###################################################################### #}
 {# Global Climate jobs #}
 {# ###################################################################### #}
@@ -1220,6 +1237,49 @@
 {% endif %}
 
 {% if task_ns.conf_name.startswith("nwp_gal9-C896_MG_dt6") %}
+
+    {% do task_dict.update({
+        "opt_confs": ["um_dump", "oper_diags_hres", "nrad_dt360"],
+        "DT": 360,
+        "tsteps": 240,
+    }) %}
+{% endif %}
+
+{% if task_ns.conf_name.startswith("nwp_gal9-37node-C896_MG_dt5") %}
+
+    {% do task_dict.update({
+        "opt_confs": ["um_dump", "oper_diags_hres", "nrad_dt300"],
+        "DT": 300,
+        "tsteps": 288,
+    }) %}
+{% endif %}
+
+{% if task_ns.conf_name.startswith("nwp_gal9-37node-C896_MG_dt6") %}
+
+    {% do task_dict.update({
+        "opt_confs": ["um_dump", "oper_diags_hres", "nrad_dt360"],
+        "DT": 360,
+        "tsteps": 240,
+    }) %}
+{% endif %}
+
+{% if task_ns.conf_name.startswith("nwp_gal9-C896_MG_z") %}
+
+    {% do task_dict.update({
+        "opt_confs": ["um_dump", "oper_diags_hres"],
+    }) %}
+{% endif %}
+
+{% if task_ns.conf_name.startswith("nwp_gal9-C896_MG_y") %}
+
+    {% do task_dict.update({
+        "opt_confs": ["um_dump", "oper_diags_hres", "nrad_dt300"],
+        "DT": 300,
+        "tsteps": 288,
+    }) %}
+{% endif %}
+
+{% if task_ns.conf_name.startswith("nwp_gal9-C896_MG_x") %}
 
     {% do task_dict.update({
         "opt_confs": ["um_dump", "oper_diags_hres", "nrad_dt360"],

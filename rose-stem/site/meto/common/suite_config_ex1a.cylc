@@ -59,7 +59,7 @@
         [[[environment]]]
             TRANSMUTE_INCLUDE_METHOD = specify_include
         [[[environment]]]
-            USE_LEGACY_TIMER=true
+            USE_VERNIER=true
             USE_TIMING_WRAPPER=true
         [[[directives]]]
             -l tmpsize=12GB
@@ -76,6 +76,7 @@
 {% endif %}
             TARGET_PLATFORM = 'meto-ex1a'
             RUN_METHOD = 'mpiexec'
+            VERNIER_OUTPUT_MODE = single
 
     [[EX1A_GNU]]
         [[[environment]]]

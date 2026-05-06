@@ -31,7 +31,7 @@
 
     [[AZSPICE_BUILD]]
         [[[environment]]]
-            USE_LEGACY_TIMER=true
+            USE_VERNIER=true
             USE_TIMING_WRAPPER=true
         [[[directives]]]
             --gres=tmp:1024
@@ -43,6 +43,7 @@
             BIG_DATA_DIR = '/data/users/lfricadmin/data'
             TARGET_PLATFORM = 'meto-azspice'
             RUN_METHOD = mpiexec
+            VERNIER_OUTPUT_MODE = single
         [[[directives]]]
             --export=NONE
 
