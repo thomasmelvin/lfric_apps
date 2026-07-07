@@ -42,7 +42,6 @@ module wt_advective_update_alg_mod
                                                 operators_fv,                  &
                                                 operators_fem,                 &
                                                 oned_reconstruction,           &
-                                                consistent_metric,             &
                                                 panel_edge_treatment,          &
                                                 panel_edge_treatment_none
   use transport_constants_mod,            only: get_element_order_h_transport, &
@@ -285,7 +284,6 @@ contains
   subroutine wt_advective_update_alg(rhs, adv_field, wind, direction, &
                                      transport_metadata, final_rk_stage)
 
-    use consistent_wind_kernel_mod,     only: consistent_wind_kernel_type
     use poly1d_vert_adv_kernel_mod,     only: poly1d_vert_adv_kernel_type
     use rtheta_kernel_mod,              only: rtheta_kernel_type
     use rtheta_bd_kernel_mod,           only: rtheta_bd_kernel_type
@@ -314,7 +312,6 @@ contains
     type(field_type),              pointer :: chi(:)
     type(field_type),              pointer :: mt_lumped_inv_r_def
     type(r_tran_field_type)                :: mt_lumped_inv_r_tran
-    type(r_tran_field_type)                :: consistent_wind
     type(r_tran_field_type)                :: u_grad_z
     type(field_type),              pointer :: height_rdef
     type(r_tran_field_type)                :: height
@@ -379,28 +376,8 @@ contains
         ! Horizontal update
         call hori_wt_update_alg(u_grad_f, wind_h, wind_h, adv_field, transport_metadata)
 
-        ! TODO #3325: Make consistent wind be pre-computed
-        if ( consistent_metric .and. .false.) then
-          ! Consistent wind will be vertical only -- initialise as wind_v
-          height_rdef => get_height_fv(Wtheta, mesh%get_id())
-          call height%initialise( vector_space = height_rdef%get_function_space() )
-          call invoke( real_to_real_x(height, height_rdef) )
-          chi => get_coordinates(mesh%get_id())
-          call u_grad_z%initialise( u_grad_f%get_function_space() )
-          call consistent_wind%initialise( wind_v%get_function_space() )
-          call invoke( setval_c(u_grad_z, 0.0_r_def), &
-                       setval_X(consistent_wind, wind_v) )
-          call hori_wt_update_alg(u_grad_z, wind_h, wind_h, height, transport_metadata)
-          call invoke( consistent_wind_kernel_type(consistent_wind, wind, &
-                                                   u_grad_z, chi(3)) )
-          ! Then vertical update uses consistent wind
-          call vert_wt_update_alg(u_grad_f, consistent_wind, adv_field, &
-                                  transport_metadata, final_rk_stage)
-        else
-          ! Not using consistent wind, so just do normal vertical update
-          call vert_wt_update_alg(u_grad_f, wind_v, adv_field, &
-                                  transport_metadata, final_rk_stage)
-        end if
+        call vert_wt_update_alg(u_grad_f, wind_v, adv_field, &
+                                transport_metadata, final_rk_stage)
 
       case ( direction_h )
         call hori_wt_update_alg(u_grad_f, wind, wind, adv_field, transport_metadata)
