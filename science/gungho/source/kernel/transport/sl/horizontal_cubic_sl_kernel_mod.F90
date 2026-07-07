@@ -390,6 +390,9 @@ contains
       field_out(:) - field(map_wf(1) : map_wf(1)+nl-1)                         &
     )
 
+    !do k = 0, nl
+    !  write(6,*) 'SL new = ',field_out(k+1), 'field = ', field(map_wf(1)+k), 'inc = ', increment(map_wf(1)+k)
+    !end do
   end subroutine horizontal_cubic_sl_1d
 
 end module horizontal_cubic_sl_kernel_mod

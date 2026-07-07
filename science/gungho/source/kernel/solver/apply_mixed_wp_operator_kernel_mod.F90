@@ -156,7 +156,7 @@ subroutine apply_mixed_wp_operator_code(cell,                       &
   ! Internal variables
   integer(kind=i_def)                                :: df, df2, ij,   &
                                                         nm1, iw3, iwt, &
-                                                        iw2, iw2h, iw2v
+                                                        iw2, iw2h, iw2v, k
   real(kind=r_solver), dimension(0:nlayers-1,ndf_w2) :: u_e
   real(kind=r_solver), dimension(0:nlayers)          :: t_col
 
@@ -196,6 +196,23 @@ subroutine apply_mixed_wp_operator_code(cell,                       &
                          - p2t(ij:ij+nm1, ndf_w2h+df, 1)*t_col(0:nm1)   &
                          - p2t(ij:ij+nm1, ndf_w2h+df, 2)*t_col(1:nm1+1) &
                          - grad(ij:ij+nm1, ndf_w2h+df, 1)*exner(iw3:iw3+nm1))
+    if ( cell < 0 ) then
+      do k = 0, nm1
+        write(6,*) map_w2(ndf_w2h+df)+k, undf_w2+map_w3(1)+k,  norm_u(iw2+k)*grad(ij+k, ndf_w2h+df, 1)        
+      end do
+      do df2 = 1, ndf_w2
+        do k = 0, nm1
+          write(6,*) map_w2(ndf_w2h+df)+k, map_w2(df2)+k,  &
+              -norm_u(iw2+k)*p2t(ij+k, ndf_w2h+df, 1)*mt_lumped_inv(iwt+k)*pt2(ij+k, 1, df2)
+          if (k>0) write(6,*) map_w2(ndf_w2h+df)+k, map_w2(df2)+k-1,  &
+              -norm_u(iw2+k)*p2t(ij+k, ndf_w2h+df, 1)*mt_lumped_inv(iwt+k)*pt2(ij+k-1, 2, df2)
+          if (k<nm1) write(6,*) map_w2(ndf_w2h+df)+k, map_w2(df2)+k+1,  &
+              -norm_u(iw2+k)*p2t(ij+k, ndf_w2h+df, 2)*mt_lumped_inv(iwt+k+1)*pt2(ij+k+1, 1, df2)
+          write(6,*) map_w2(ndf_w2h+df)+k, map_w2(df2)+k,  &
+              -norm_u(iw2+k)*p2t(ij+k, ndf_w2h+df, 2)*mt_lumped_inv(iwt+k+1)*pt2(ij+k, 2, df2)                
+        end do
+      end do
+    end if
 
   end do
   do df2 = 1, ndf_w2
@@ -205,7 +222,9 @@ subroutine apply_mixed_wp_operator_code(cell,                       &
       lhs_w(iw2v:iw2v+nm1) = lhs_w(iw2v:iw2v+nm1) &
                            + norm_u(iw2:iw2+nm1)* &
                              mu_cd(ij:ij+nm1, ndf_w2h+df, df2)*u_e(:,df2)
-
+      do k = 0, nm1
+        if ( cell < 0) write(6,*) map_w2(ndf_w2h+df)+k, map_w2(df2)+k,  norm_u(iw2+k)*mu_cd(ij+k, ndf_w2h+df, df2)
+      end do
     end do
   end do
   ! Set BC for lhs_w
@@ -215,9 +234,27 @@ subroutine apply_mixed_wp_operator_code(cell,                       &
   ! LHS P
   lhs_p(iw3:iw3+nm1) = m3p(ij:ij+nm1, 1, 1)*exner(iw3:iw3+nm1) &
                      - p3t(ij:ij+nm1, 1, 1)*t_col(0:nm1)       &
-                     - p3t(ij:ij+nm1, 1, 2)*t_col(1:nm1+1)
+                     - p3t(ij:ij+nm1, 1, 2)*t_col(1:nm1+1) 
+  if ( cell < 0) then                     
+    do k = 0, nm1
+      write(6,*) undf_w2+map_w3(1)+k, undf_w2+map_w3(1)+k,  m3p(ij+k, 1, 1)
+    end do
+  !   t_col(k) = mt(k)*(-pt2(k,1,:)*u(k) - pt2(k-1,2,:)*u(k-1))
+  ! t_col(k+1) = mt(k+1)*(-pt2(k+1,1,:)*u(k+1) - pt2(k,2,:)*u(k))
+    do df = 1, ndf_w2
+      do k = 0, nm1
+        write(6,*) undf_w2+map_w3(1)+k, map_w2(df)+k,  + p3t(ij+k, 1, 1)*mt_lumped_inv(iwt+k)*pt2(ij+k, 1, df)
+        if (k>0)write(6,*) undf_w2+map_w3(1)+k, map_w2(df)+k-1,  + p3t(ij+k, 1, 1)*mt_lumped_inv(iwt+k)*pt2(ij+k-1, 2, df)
+        if (k<nm1)write(6,*) undf_w2+map_w3(1)+k, map_w2(df)+k+1,  + p3t(ij+k, 1, 2)*mt_lumped_inv(iwt+k+1)*pt2(ij+k+1, 1, df)
+        write(6,*) undf_w2+map_w3(1)+k, map_w2(df)+k,  + p3t(ij+k, 1, 2)*mt_lumped_inv(iwt+k+1)*pt2(ij+k, 2, df)
+      end do
+    end do
+  end if 
   do df = 1, ndf_w2
     lhs_p(iw3:iw3+nm1) = lhs_p(iw3:iw3+nm1) + q32(ij:ij+nm1, 1, df)*u_e(:,df)
+    do k = 0, nm1
+      if ( cell < 0) write(6,*) undf_w2+map_w3(1)+k, map_w2(df)+k,  q32(ij+k, 1, df)*u_e(k+1,df)
+    end do
   end do
 
 end subroutine apply_mixed_wp_operator_code

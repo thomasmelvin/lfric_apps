@@ -380,7 +380,7 @@ contains
         call hori_wt_update_alg(u_grad_f, wind_h, wind_h, adv_field, transport_metadata)
 
         ! TODO #3325: Make consistent wind be pre-computed
-        if ( consistent_metric ) then
+        if ( consistent_metric .and. .false.) then
           ! Consistent wind will be vertical only -- initialise as wind_v
           height_rdef => get_height_fv(Wtheta, mesh%get_id())
           call height%initialise( vector_space = height_rdef%get_function_space() )

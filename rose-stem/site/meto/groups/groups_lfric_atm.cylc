@@ -203,6 +203,14 @@
         "ex1a_omp_C192_cce",
         "ex1a_omp_gnu",
     ],
+    "lfric_atm_ex1a_consistent": [
+        "lfric_atm_nwp_gal9-C224_MG_ex1a_cce_production-32bit",
+        "lfric_atm_nwp_gal9-consistent-C224_MG_ex1a_cce_production-32bit",
+        "lfric_atm_nwp_gal9-C896_MG_ex1a_cce_production-32bit",
+        "lfric_atm_nwp_gal9-consistent-C896_MG_ex1a_cce_production-32bit",
+        "lfric_atm_ral3-ukv_MG_ex1a_cce_production-32bit",
+        "lfric_atm_ral3-ukv_MG-consistent_ex1a_cce_production-32bit",
+    ],
     "lfric_atm_ex1a_performance_check": [
         "lfric_atm_ex1a_weekly",
         "lfric_atm_nwp_gal9-C896_MG_720t_perfRun0_ex1a_cce_production-32bit",

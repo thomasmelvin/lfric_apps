@@ -119,7 +119,7 @@ subroutine apply_mixed_u_operator_code(cell,                          &
   ! Internal variables
   integer(kind=i_def) :: df, df2, ij, &
                          nm1, iw3,    &
-                         iw2, iw2h
+                         iw2, iw2h, k
 
   ! Set up some useful shorthands for indices
   ij = (cell-1)*nlayers + 1
@@ -132,6 +132,9 @@ subroutine apply_mixed_u_operator_code(cell,                          &
     iw2  = map_w2(df)
     lhs_uv(iw2h:iw2h+nm1) = - norm_u(iw2:iw2+nm1)   &
                            *grad(ij:ij+nm1, df, 1)*exner(iw3:iw3+nm1)
+    do k = 0, nm1
+      if ( cell < 0) write(6,*) map_w2(df)+k, undf_w2+map_w3(1)+k,  norm_u(iw2+k)*grad(ij+k, df, 1)
+    end do
   end do
   do df2 = 1, ndf_w2h
     do df = 1, ndf_w2h
@@ -140,6 +143,9 @@ subroutine apply_mixed_u_operator_code(cell,                          &
       lhs_uv(iw2h:iw2h+nm1) = lhs_uv(iw2h:iw2h+nm1) &
                             + norm_u(iw2:iw2+nm1)*  &
                               mu_cd(ij:ij+nm1, df, df2)*wind_uv(map_w2h(df2):map_w2h(df2)+nm1)
+      do k = 0, nm1
+        if ( cell < 0) write(6,*) map_w2(df)+k, map_w2(df2)+k,  norm_u(iw2+k)*mu_cd(ij+k, df, df2)
+      end do
     end do
   end do
   do df2 = 1, ndf_w2v
@@ -149,6 +155,9 @@ subroutine apply_mixed_u_operator_code(cell,                          &
       lhs_uv(iw2h:iw2h+nm1) = lhs_uv(iw2h:iw2h+nm1) &
                             + norm_u(iw2:iw2+nm1)*  &
                               mu_cd(ij:ij+nm1, df, ndf_w2h+df2)*wind_w(map_w2v(df2):map_w2v(df2)+nm1)
+      do k = 0, nm1
+        if ( cell < 0) write(6,*) map_w2(df)+k, map_w2(ndf_w2h+df2)+k,  norm_u(iw2+k)*mu_cd(ij+k, df, ndf_w2h+df2)
+      end do
     end do
   end do
 

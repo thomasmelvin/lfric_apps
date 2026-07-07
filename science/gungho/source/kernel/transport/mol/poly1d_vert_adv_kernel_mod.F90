@@ -188,6 +188,7 @@ subroutine poly1d_vert_adv_code( nlayers,              &
     end if
     advective(map_wt(1)+k) = advective(map_wt(1)+k) &
                              + wind(map_w2v(1)+k)*dpdz
+    !write(6,*) 'MoL Vertial wind: ',k,wind(map_w2v(1)+k),dpdz
   end do
 
 end subroutine poly1d_vert_adv_code
