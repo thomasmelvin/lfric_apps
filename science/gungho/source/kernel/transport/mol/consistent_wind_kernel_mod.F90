@@ -13,12 +13,12 @@
 
 module consistent_wind_kernel_mod
 
-use argument_mod,      only : arg_type, func_type,       &
-                              GH_FIELD, GH_REAL,         &
-                              GH_READWRITE, GH_READ,     &
-                              GH_BASIS, GH_DIFF_BASIS,   &
+use argument_mod,      only : arg_type, func_type,     &
+                              GH_FIELD, GH_REAL,       &
+                              GH_READWRITE, GH_READ,   &
+                              GH_BASIS, GH_DIFF_BASIS, &
                               CELL_COLUMN, GH_EVALUATOR
-use constants_mod,     only : r_def, i_def
+use constants_mod,     only : r_def, i_def, r_tran
 use fs_continuity_mod, only : Wtheta, W2, W2v, Wchi
 use kernel_mod,        only : kernel_type
 
