@@ -73,6 +73,7 @@ module semi_implicit_timestep_alg_mod
   use dg_inc_matrix_vector_kernel_mod, &
                                   only: dg_inc_matrix_vector_kernel_type
   use sci_enforce_bc_kernel_mod,  only: enforce_bc_kernel_type
+  use semi_lump_kernel_mod,       only: semi_lump_kernel_type
 
   ! Derived Types
   use field_array_mod,            only: field_array_type
@@ -631,6 +632,9 @@ contains
 
     type(operator_type), pointer :: mm_wt
     type(operator_type), pointer :: mm_vel
+    type(operator_type)          :: mm_vel_lump
+    type(field_type)             :: smag_du
+    logical(l_def)               :: hlump
 
     integer(kind=i_def) :: outer, inner, reference_reset_freq
     real(kind=r_def)    :: varalpha, varbeta ! alpha, beta weight to use
@@ -695,6 +699,11 @@ contains
       mm_wt  => get_mass_matrix_fe(Wtheta, mesh%get_id())
       mm_vel => get_mass_matrix_fe(W2, mesh%get_id())
     end if
+
+    call mm_vel_lump%initialise(u%get_function_space(), u%get_function_space())
+    hlump = .true.
+    call invoke( semi_lump_kernel_type( mm_vel_lump, mm_vel, hlump ) )
+    call smag_du%initialise(u%get_function_space())
 
     !--------------------------------------------------------------------
     ! Copy prognostic field data to state arrays
@@ -913,7 +922,8 @@ contains
         !--------------------------------------------------------------------
         ! Call the fast physics terms
         !--------------------------------------------------------------------
-        call fast_physics(self%du, self%dtheta, mr,                            &
+        call invoke( setval_c( smag_du, 0.0_r_def ) )
+        call fast_physics(self%du, smag_du, self%dtheta, mr,                   &
                           self%state_n(igh_t), self%state_n(igh_d),            &
                           self%state_n(igh_u), self%state_n(igh_p),            &
                           self%mr_n, derived_fields,                           &
@@ -925,7 +935,7 @@ contains
                           outer, model_clock, cast_dt)
 
         if (smagorinsky .and. smagorinsky_placement == smagorinsky_placement_outer) then
-          call smagorinsky_alg(self%dtheta, self%du, mr, self%state(igh_t), &
+          call smagorinsky_alg(self%dtheta, smag_du, mr, self%state(igh_t), &
                                self%state(igh_u),                           &
                                derived_fields, self%state(igh_d),           &
                                cast_dt)
@@ -939,7 +949,8 @@ contains
           call invoke(name="update_rhs_phys_from_fast_physics",                         &
                     dg_inc_matrix_vector_kernel_type(self%rhs_phys(igh_t), self%dtheta, &
                                                                        mm_wt),          &
-                    matrix_vector_kernel_type(self%rhs_phys(igh_u), self%du, mm_vel ),  &
+                    matrix_vector_kernel_type(self%rhs_phys(igh_u), self%du, mm_vel_lump ),  &
+                    matrix_vector_kernel_type(self%rhs_phys(igh_u), smag_du, mm_vel ),  &
                     enforce_bc_kernel_type(self%rhs_phys(igh_u))                        &
                     )
         end if

@@ -118,8 +118,8 @@ contains
   !> @param[in]     clock               The clock object
   !> @param[in]     dt                  The model timestep length
   !!                                    diagnostics
-    subroutine fast_physics(du, dtheta, mr, theta, rho, u_n, exner, mr_n, &
-                            derived_fields, radiation_fields,             &
+    subroutine fast_physics(du, smag_du, dtheta, mr, theta, rho, u_n, exner, mr_n, &
+                            derived_fields, radiation_fields,                     &
                             microphysics_fields, orography_fields,                &
                             turbulence_fields, convection_fields, cloud_fields,   &
                             surface_fields, soil_fields, snow_fields,             &
@@ -129,7 +129,7 @@ contains
     implicit none
 
     ! Fields
-    type( field_type ), intent( inout ) :: du, dtheta
+    type( field_type ), intent( inout ) :: du, dtheta, smag_du
     type( field_type ), intent( in )    :: u_n, theta, rho, exner
 
     ! Field bundles
@@ -391,7 +391,7 @@ contains
     if (smagorinsky .and. smagorinsky_placement == smagorinsky_placement_fast) then
       call derived_fields%get_field('theta_star', theta_star)
       call derived_fields%get_field('u_star', u_star)
-      call smagorinsky_alg(dtheta, du, mr, theta_star, u_star, &
+      call smagorinsky_alg(dtheta, smag_du, mr, theta_star, u_star, &
                            derived_fields, rho, dt)
     end if
 
