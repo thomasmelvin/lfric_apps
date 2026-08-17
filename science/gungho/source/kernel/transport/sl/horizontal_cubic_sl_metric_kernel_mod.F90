@@ -1,15 +1,13 @@
 !-------------------------------------------------------------------------------
-! (c) Crown copyright 2023 Met Office. All rights reserved.
+! (c) Crown copyright 2026 Met Office. All rights reserved.
 ! The file LICENCE, distributed with this code, contains details of the terms
 ! under which the code may be used.
 !-------------------------------------------------------------------------------
-!> @brief   Calculates the advective increments in x and y at time n+1 using
-!!          cubic semi-Lagrangian transport.
-!> @details This kernel using cubic interpolation to solve the one-dimensional
-!!          advection equation in both x and y, giving advective increments
-!!          in both directions. This is the second part of the COSMIC splitting,
-!!          so the x increment works on the field previously advected in the
-!!          y-direction(and vice versa).
+!> @brief Compute advective increment u.grad(z) using the Nivana scheme used in
+!!        the ffsl and sl transport schemes.
+!> @details Compute the advective increment u.grad(z) = u*dz/dx + v*dz/dy where
+!! the horizontal gradients are computed using the same reconstruction method as
+!! the transport scheme (in this case Nivana).
 !!
 !> @note This kernel only works when field is a W3/Wtheta field at lowest order.
 
@@ -53,22 +51,15 @@ module horizontal_cubic_sl_metric_kernel_mod
 
 contains
 
-  !> @brief Compute advective transport in x and y directions using 1D
-  !!        Semi-Lagrangian schemes, with a cubic reconstruction. This is the
-  !!        "outer" step of a COSMIC splitting scheme.
+  !> @brief Compute advective increment u.grad(z) using the Nivana scheme used in
+  !!        the ffsl and sl transport schemes.
   !> @param[in]     nlayers           Number of layers
-  !> @param[in,out] increment_x       Advective increment in x direction
-  !> @param[in,out] increment_y       Advective increment in y direction
-  !> @param[in]     field_x           Field from x direction
-  !> @param[in]     stencil_sizes_x   Sizes of the branches of the cross stencil
-  !> @param[in]     stencil_max_x     Maximum size of a cross stencil branch
-  !> @param[in]     stencil_map_x     Dofmap for the field_x stencil
-  !> @param[in]     field_y           Field from y direction
-  !> @param[in]     stencil_sizes_y   Sizes of the branches of the cross stencil
-  !> @param[in]     stencil_max_y     Maximum size of a cross stencil branch
-  !> @param[in]     stencil_map_y     Dofmap for the field_y stencil
-  !> @param[in]     dep_pts           Departure points
-  !> @param[in]     monotone          Horizontal monotone option for cubic SL
+  !> @param[in,out] increment         Horizontal metric increment
+  !> @param[in]     z                 Height field values used in reconstruction
+  !> @param[in]     stencil_sizes     Sizes of the branches of the cross stencil
+  !> @param[in]     stencil_max       Maximum size of a cross stencil branch
+  !> @param[in]     stencil_map       Dofmap for the z stencil
+  !> @param[in]     wind              Horizontal wind/departure field on W2H
   !> @param[in]     ndf_wf            Num of DoFs for field per cell
   !> @param[in]     undf_wf           Num of DoFs for this partition for field
   !> @param[in]     map_wf            Map for Wf
@@ -111,7 +102,7 @@ contains
     real(kind=r_tran),   intent(in)    :: wind(undf_w2h)
 
     ! Local scalars
-    integer(kind=i_def) :: k, kp, km
+    integer(kind=i_def) :: k, kp, km, d, d2(4), d3(4)
 
     real(kind=r_tran)   :: dzdx, dzdy
     real(kind=r_tran)   :: z_l, z_r, up, um, vp, vm
@@ -123,7 +114,18 @@ contains
     real(kind=r_tran), parameter :: c1 = 2.0/6.0
     real(kind=r_tran), parameter :: c2 = 5.0/6.0
     real(kind=r_tran), parameter :: c3 = -1.0/6.0
-   
+
+    ! Ensure that we don't do out of the domain and if there are not enough points
+    ! then revert to constant reconstruction
+    d2(:) = 1
+    d3(:) = 1
+    do d = 1, 4
+      if ( stencil_sizes(d) == stencil_max ) then
+        d2(d) = 2
+        d3(d) = 3
+      end if
+    end do
+
     do k = 0, nlayers
       km = max(0, k-1)
       kp = min(nlayers-1, k)
@@ -136,14 +138,14 @@ contains
     ! dzdx
     ! Compute upwind Z on the left and right sides of the cell
     if ( um > 0.0_r_tran ) then
-      z_l = b0*z(stencil_map(1,3,1)+k) + b1*z(stencil_map(1,2,1)+k) + b2*z(stencil_map(1,1,1)+k)
+      z_l = b0*z(stencil_map(1,d3(1),1)+k) + b1*z(stencil_map(1,d2(1),1)+k) + b2*z(stencil_map(1,1,1)+k)
     else
-      z_l = c1*z(stencil_map(1,2,1)+k) + c2*z(stencil_map(1,1,1)+k) + c3*z(stencil_map(1,2,3)+k)
+      z_l = c1*z(stencil_map(1,d2(1),1)+k) + c2*z(stencil_map(1,1,1)+k) + c3*z(stencil_map(1,d2(3),3)+k)
     end if
     if ( up > 0.0_r_tran ) then
-      z_r = b0*z(stencil_map(1,2,1)+k) + b1*z(stencil_map(1,1,1)+k) + b2*z(stencil_map(1,2,3)+k)
+      z_r = b0*z(stencil_map(1,d2(1),1)+k) + b1*z(stencil_map(1,1,1)+k) + b2*z(stencil_map(1,d2(3),3)+k)
     else
-      z_r = c1*z(stencil_map(1,1,3)+k) + c2*z(stencil_map(1,2,3)+k) + c3*z(stencil_map(1,3,3)+k)
+      z_r = c1*z(stencil_map(1,1,3)+k) + c2*z(stencil_map(1,d2(3),3)+k) + c3*z(stencil_map(1,d3(3),3)+k)
     end if
 
     dzdx = (z_r- z_l)
@@ -151,14 +153,14 @@ contains
     ! dzdy
     ! Compute upwind Z on the left and right sides of the cell
     if ( vm > 0.0_r_tran ) then
-      z_l = b0*z(stencil_map(1,3,2)+k) + b1*z(stencil_map(1,2,2)+k) + b2*z(stencil_map(1,1,2)+k)
+      z_l = b0*z(stencil_map(1,d3(2),2)+k) + b1*z(stencil_map(1,d2(2),2)+k) + b2*z(stencil_map(1,1,2)+k)
     else
-      z_l = c1*z(stencil_map(1,2,2)+k) + c2*z(stencil_map(1,1,2)+k) + c3*z(stencil_map(1,2,4)+k)
+      z_l = c1*z(stencil_map(1,d2(2),2)+k) + c2*z(stencil_map(1,1,2)+k) + c3*z(stencil_map(1,d2(4),4)+k)
     end if
     if ( vp > 0.0_r_tran ) then
-      z_r = b0*z(stencil_map(1,2,2)+k) + b1*z(stencil_map(1,1,2)+k) + b2*z(stencil_map(1,2,4)+k)
+      z_r = b0*z(stencil_map(1,d2(2),2)+k) + b1*z(stencil_map(1,1,2)+k) + b2*z(stencil_map(1,d2(4),4)+k)
     else
-      z_r = c1*z(stencil_map(1,1,4)+k) + c2*z(stencil_map(1,2,4)+k) + c3*z(stencil_map(1,3,4)+k)
+      z_r = c1*z(stencil_map(1,1,4)+k) + c2*z(stencil_map(1,d2(4),4)+k) + c3*z(stencil_map(1,d3(4),4)+k)
     end if
 
     dzdy = (z_r- z_l)

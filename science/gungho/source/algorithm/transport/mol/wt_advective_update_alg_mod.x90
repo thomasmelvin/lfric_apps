@@ -271,7 +271,7 @@ contains
   !> @param[in,out] rhs                 Advective increment
   !> @param[in]     adv_field           Field to advect
   !> @param[in]     wind                Advecting wind field
-  !> @param[in]     reversible          Use the reversible reconstruction
+  !> @param[in]     direction           Direction for split transport update
   !> @param[in]     transport_metadata  Contains transport configuration options
   !> @param[in]     final_rk_stage      Whether this is the last Runge-Kutta stage
   subroutine wt_advective_update_alg(rhs, adv_field, wind, direction, &
