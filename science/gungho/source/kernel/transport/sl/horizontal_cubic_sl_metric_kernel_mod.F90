@@ -19,7 +19,7 @@ module horizontal_cubic_sl_metric_kernel_mod
                                    GH_READ, GH_SCALAR,           &
                                    STENCIL, CROSS2D, GH_INTEGER, &
                                    ANY_DISCONTINUOUS_SPACE_1
-  use constants_mod,         only: r_tran, i_def, l_def
+  use constants_mod,         only: r_def, i_def, l_def
   use fs_continuity_mod,     only: W2H
   use kernel_mod,            only: kernel_type
 
@@ -97,23 +97,23 @@ contains
     integer(kind=i_def), intent(in) :: stencil_map(ndf_wf,stencil_max,4)
 
     ! Arguments: Fields
-    real(kind=r_tran),   intent(inout) :: increment(undf_wf)
-    real(kind=r_tran),   intent(in)    :: z(undf_wf)
-    real(kind=r_tran),   intent(in)    :: wind(undf_w2h)
+    real(kind=r_def),   intent(inout) :: increment(undf_wf)
+    real(kind=r_def),   intent(in)    :: z(undf_wf)
+    real(kind=r_def),   intent(in)    :: wind(undf_w2h)
 
     ! Local scalars
     integer(kind=i_def) :: k, kp, km, d, d2(4), d3(4)
 
-    real(kind=r_tran)   :: dzdx, dzdy
-    real(kind=r_tran)   :: z_l, z_r, up, um, vp, vm
+    real(kind=r_def)   :: dzdx, dzdy
+    real(kind=r_def)   :: z_l, z_r, up, um, vp, vm
 
     ! Interpolation coefficients
-    real(kind=r_tran), parameter :: b0 = -1.0/6.0
-    real(kind=r_tran), parameter :: b1 = 5.0/6.0
-    real(kind=r_tran), parameter :: b2 = 2.0/6.0
-    real(kind=r_tran), parameter :: c1 = 2.0/6.0
-    real(kind=r_tran), parameter :: c2 = 5.0/6.0
-    real(kind=r_tran), parameter :: c3 = -1.0/6.0
+    real(kind=r_def), parameter :: b0 = -1.0_r_def/6.0_r_def
+    real(kind=r_def), parameter :: b1 = 5.0_r_def/6.0_r_def
+    real(kind=r_def), parameter :: b2 = 2.0_r_def/6.0_r_def
+    real(kind=r_def), parameter :: c1 = 2.0_r_def/6.0_r_def
+    real(kind=r_def), parameter :: c2 = 5.0_r_def/6.0_r_def
+    real(kind=r_def), parameter :: c3 = -1.0_r_def/6.0_r_def
 
     ! Ensure that we don't do out of the domain and if there are not enough points
     ! then revert to constant reconstruction
@@ -130,19 +130,19 @@ contains
       km = max(0, k-1)
       kp = min(nlayers-1, k)
 
-      um =  0.5_r_tran*(wind(map_w2h(1)+km) + wind(map_w2h(1)+kp))
-      up =  0.5_r_tran*(wind(map_w2h(3)+km) + wind(map_w2h(3)+kp))
-      vm = -0.5_r_tran*(wind(map_w2h(2)+km) + wind(map_w2h(2)+kp))
-      vp = -0.5_r_tran*(wind(map_w2h(4)+km) + wind(map_w2h(4)+kp))
+      um =  0.5_r_def*(wind(map_w2h(1)+km) + wind(map_w2h(1)+kp))
+      up =  0.5_r_def*(wind(map_w2h(3)+km) + wind(map_w2h(3)+kp))
+      vm = -0.5_r_def*(wind(map_w2h(2)+km) + wind(map_w2h(2)+kp))
+      vp = -0.5_r_def*(wind(map_w2h(4)+km) + wind(map_w2h(4)+kp))
 
     ! dzdx
     ! Compute upwind Z on the left and right sides of the cell
-    if ( um > 0.0_r_tran ) then
+    if ( um > 0.0_r_def ) then
       z_l = b0*z(stencil_map(1,d3(1),1)+k) + b1*z(stencil_map(1,d2(1),1)+k) + b2*z(stencil_map(1,1,1)+k)
     else
       z_l = c1*z(stencil_map(1,d2(1),1)+k) + c2*z(stencil_map(1,1,1)+k) + c3*z(stencil_map(1,d2(3),3)+k)
     end if
-    if ( up > 0.0_r_tran ) then
+    if ( up > 0.0_r_def ) then
       z_r = b0*z(stencil_map(1,d2(1),1)+k) + b1*z(stencil_map(1,1,1)+k) + b2*z(stencil_map(1,d2(3),3)+k)
     else
       z_r = c1*z(stencil_map(1,1,3)+k) + c2*z(stencil_map(1,d2(3),3)+k) + c3*z(stencil_map(1,d3(3),3)+k)
@@ -152,12 +152,12 @@ contains
 
     ! dzdy
     ! Compute upwind Z on the left and right sides of the cell
-    if ( vm > 0.0_r_tran ) then
+    if ( vm > 0.0_r_def ) then
       z_l = b0*z(stencil_map(1,d3(2),2)+k) + b1*z(stencil_map(1,d2(2),2)+k) + b2*z(stencil_map(1,1,2)+k)
     else
       z_l = c1*z(stencil_map(1,d2(2),2)+k) + c2*z(stencil_map(1,1,2)+k) + c3*z(stencil_map(1,d2(4),4)+k)
     end if
-    if ( vp > 0.0_r_tran ) then
+    if ( vp > 0.0_r_def ) then
       z_r = b0*z(stencil_map(1,d2(2),2)+k) + b1*z(stencil_map(1,1,2)+k) + b2*z(stencil_map(1,d2(4),4)+k)
     else
       z_r = c1*z(stencil_map(1,1,4)+k) + c2*z(stencil_map(1,d2(4),4)+k) + c3*z(stencil_map(1,d3(4),4)+k)
@@ -165,8 +165,8 @@ contains
 
     dzdy = (z_r- z_l)
 
-    increment(map_wf(1)+k) = 0.5_r_tran*(um+up)*dzdx + 0.5_r_tran*(vm+vp)*dzdy
-  end do       
+    increment(map_wf(1)+k) = 0.5_r_def*(um+up)*dzdx + 0.5_r_def*(vm+vp)*dzdy
+  end do
 
   end subroutine horizontal_cubic_sl_metric_code
 

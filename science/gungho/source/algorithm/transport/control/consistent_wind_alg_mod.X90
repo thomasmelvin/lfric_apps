@@ -21,13 +21,13 @@ module consistent_wind_alg_mod
   use split_w2_field_kernel_mod,         only: split_w2_field_kernel_type
   use integer_field_mod,                 only: integer_field_type
   use field_mod,                         only: field_type
+  use r_tran_field_mod,                  only: r_tran_field_type
   use function_space_mod,                only: function_space_type
   use function_space_collection_mod,     only: function_space_collection
   use wt_advective_update_alg_mod,       only: hori_wt_update_alg
   use transport_enumerated_types_mod,    only: split_method_mol
   use horizontal_cubic_sl_metric_kernel_mod, &
                                          only: horizontal_cubic_sl_metric_kernel_type
-                                            
 
   implicit none
 
@@ -69,12 +69,10 @@ contains
     class(model_clock_type), intent(in) :: model_clock
     type(field_type),        intent(in) :: rho_d_latest, wind_n, wind_np1
     type(transport_controller_type), intent(inout)  :: transport_controller
-    
 
     type(field_type) :: chi3_inc, chi3
     type(field_type), pointer :: chi3_default
     type(transport_metadata_type), pointer :: transport_metadata
-
 
     integer(kind=i_def) :: mesh_id
 
@@ -82,6 +80,8 @@ contains
     type(field_type), pointer :: wind_adv_ptr
     type(field_type), target :: wind_adv
     type(field_type) :: wind_v, wind_h
+
+    type(r_tran_field_type) :: chi3_inc_r_tran, wind_h_r_tran, chi3_r_tran
 
     type(integer_field_type), pointer :: face_selector_ew
     type(integer_field_type), pointer :: face_selector_ns
@@ -111,7 +111,7 @@ contains
                                                 wind_n%get_element_order_h(), &
                                                 wind_n%get_element_order_v(), W2v )
     call wind_h%initialise( w2h_fs )
-    call wind_v%initialise( w2v_fs )    
+    call wind_v%initialise( w2v_fs )
     call wind_adv%initialise( wind_n%get_function_space() )
     face_selector_ew => get_face_selector_ew( mesh_id )
     face_selector_ns => get_face_selector_ns( mesh_id )
@@ -119,11 +119,19 @@ contains
                  split_w2_field_kernel_type( wind_h, wind_v, wind_adv,           &
                                              face_selector_ew,                   &
                                              face_selector_ns ) )
-    
+
     ! Compute u.grad(chi3)
     if ( transport_metadata%get_horizontal_method() == split_method_mol ) then
       ! With MoL
-      call hori_wt_update_alg(chi3_inc, wind_h, wind_h, chi3, transport_metadata) 
+      call chi3_inc_r_tran%initialise( chi3_inc%get_function_space() )
+      call wind_h_r_tran%initialise( wind_h%get_function_space() )
+      call chi3_r_tran%initialise( chi3%get_function_space() )
+      call invoke( real_to_real_X( chi3_inc_r_tran, chi3_inc ), &
+                   real_to_real_X( wind_h_r_tran, wind_h ),     &
+                   real_to_real_X( chi3_r_tran, chi3 ) )
+      call hori_wt_update_alg(chi3_inc_r_tran, wind_h_r_tran, wind_h_r_tran,  &
+                              chi3_r_tran, transport_metadata)
+      call invoke( real_to_real_X( chi3_inc, chi3_inc_r_tran ) )
     else
       ! With SL
       call invoke(horizontal_cubic_sl_metric_kernel_type(chi3_inc, chi3, stencil_depth, wind_h) )
@@ -141,7 +149,7 @@ contains
 
     ! Recompute controller object (departure points etc) using new consistent wind
     call log_event( "Recomputing transport controller with consistent wind...", LOG_LEVEL_INFO)
-    wind_adv_ptr => wind_adv    
+    wind_adv_ptr => wind_adv
     call transport_controller%finalise()
     call transport_controller%initialise(                                      &
             model_clock, rho_d_latest, wind_adv, wind_adv_ptr, outer,          &
