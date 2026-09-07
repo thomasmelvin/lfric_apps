@@ -1,5 +1,5 @@
 !-------------------------------------------------------------------------------
-! (c) Crown copyright 2026 Met Office. All rights reserved.
+! (c) Crown copyright Met Office. All rights reserved.
 ! The file LICENCE, distributed with this code, contains details of the terms
 ! under which the code may be used.
 !-------------------------------------------------------------------------------
@@ -359,9 +359,9 @@ contains
           displacement(:) = direction * dep_pts(w2h_df_r : w2h_df_r+nl-1)
         end if
       end if
-      int_disp(:) = INT(displacement(:), i_def)
-      xx(:) = 1.0_r_tran + ABS(displacement(:) - REAL(int_disp, r_tran))
-      sign_disp(:) = INT(SIGN(1.0_r_tran, displacement(:)))
+      int_disp(:) = int(displacement(:), i_def)
+      xx(:) = 1.0_r_tran + abs(displacement(:) - real(int_disp, r_tran))
+      sign_disp(:) = int(sign(1.0_r_tran, displacement(:)))
 
       ! The relative index of the most downwind cell to use in the stencil
       rel_idx_hi_p(:) = - 2*sign_disp(:) - int_disp(:)
@@ -375,7 +375,7 @@ contains
         ! If this column has idx 0, find relative index for the column of the
         ! departure cell, between -stencil_extent_l and stencil_extent_r, e.g.
         ! Relative idx is   | -4 | -3 | -2 | -1 |  0 |  1 |  2 |  3 |  4 |
-        rel_idx(:) = MIN(stencil_extent_r, MAX(-stencil_extent_l,             &
+        rel_idx(:) = min(stencil_extent_r, max(-stencil_extent_l,             &
             rel_idx_hi_p(:) + (4 - j)*sign_disp(:)                            &
         ))
 
@@ -403,25 +403,25 @@ contains
       select case (monotone)
       case (monotone_strict)
         ! Bound field by immediately neighbouring values
-        q_min(:) = MIN(field_local(:,2), field_local(:,3))
-        q_max(:) = MAX(field_local(:,2), field_local(:,3))
-        field_out(:) = MIN(q_max(:), MAX(field_out(:), q_min(:)))
+        q_min(:) = min(field_local(:,2), field_local(:,3))
+        q_max(:) = max(field_local(:,2), field_local(:,3))
+        field_out(:) = min(q_max(:), max(field_out(:), q_min(:)))
 
       case (monotone_relaxed)
         ! Bound field by all values in the stencil
-        q_min(:) = MIN(                                                       &
+        q_min(:) = min(                                                       &
             field_local(:,1), field_local(:,2),                               &
             field_local(:,3), field_local(:,4)                                &
         )
-        q_max(:) = MAX(                                                       &
+        q_max(:) = max(                                                       &
             field_local(:,1), field_local(:,2),                               &
             field_local(:,3), field_local(:,4)                                &
         )
-        field_out(:) = MIN(q_max(:), MAX(field_out(:), q_min(:)))
+        field_out(:) = min(q_max(:), max(field_out(:), q_min(:)))
 
       case (monotone_positive)
         ! Just make sure field out is positive
-        field_out(:) = MAX(field_out(:), 0.0_r_tran)
+        field_out(:) = max(field_out(:), 0.0_r_tran)
 
       end select
 

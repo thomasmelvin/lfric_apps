@@ -20,7 +20,7 @@ module combine_ws_to_w2_kernel_mod
   use constants_mod,          only: r_def, i_def
   use fs_continuity_mod,      only: W2, W2h, Wtheta
   use kernel_mod,             only: kernel_type
-  use reference_element_mod,  only: W, E, N, S
+  use reference_element_mod,  only: W, E, N, S, T, B
 
   implicit none
 
@@ -103,10 +103,8 @@ subroutine combine_ws_to_w2_code(nlayers,                    &
   integer(kind=i_def), dimension(undf_w3_2d), intent(in)    :: face_selector_ns
 
   integer(kind=i_def) :: df, id1, id2
-  integer(kind=i_def) :: local_dofs_x(2), local_dofs_y(2)
-
-  local_dofs_x = (/ W, E /)
-  local_dofs_y = (/ S, N /)
+  integer(kind=i_def), parameter :: local_dofs_x(2) = (/ W, E /)
+  integer(kind=i_def), parameter :: local_dofs_y(2) = (/ S, N /)
 
   do df = 1, face_selector_ew(map_w3_2d(1))
     id1 = map_w2(local_dofs_x(df))
@@ -119,9 +117,9 @@ subroutine combine_ws_to_w2_code(nlayers,                    &
     uvw(id1:id1+nlayers-1) = uv_w2h(id2:id2+nlayers-1)
   end do
 
-  uvw(map_w2(5)) = 0.0_r_def
-  uvw(map_w2(5)+1:map_w2(5)+nlayers-1) = w_wt(map_wt(1)+1:map_wt(1)+nlayers-1)
-  uvw(map_w2(6)+nlayers-1) = 0.0_r_def
+  uvw(map_w2(B)) = 0.0_r_def
+  uvw(map_w2(B)+1:map_w2(5)+nlayers-1) = w_wt(map_wt(1)+1:map_wt(1)+nlayers-1)
+  uvw(map_w2(T)+nlayers-1) = 0.0_r_def
 
 end subroutine combine_ws_to_w2_code
 

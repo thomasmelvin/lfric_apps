@@ -1,5 +1,5 @@
 !-------------------------------------------------------------------------------
-! (c) Crown copyright 2026 Met Office. All rights reserved.
+! (c) Crown copyright Met Office. All rights reserved.
 ! The file LICENCE, distributed with this code, contains details of the terms
 ! under which the code may be used.
 !-------------------------------------------------------------------------------
@@ -317,9 +317,9 @@ contains
 
       end if
 
-      int_disp(:) = INT(displacement(:), i_def)
-      xx(:) = ABS(displacement(:) - REAL(int_disp, r_tran))
-      sign_disp(:) = INT(SIGN(1.0_r_tran, displacement(:)))
+      int_disp(:) = int(displacement(:), i_def)
+      xx(:) = abs(displacement(:) - real(int_disp, r_tran))
+      sign_disp(:) = int(sign(1.0_r_tran, displacement(:)))
 
       ! The relative index of the furthest cell to use in the stencil
       rel_idx_hi(:) = - sign_disp(:) - int_disp(:)
@@ -332,7 +332,7 @@ contains
       do j = 1, 2
         ! departure cell, between -stencil_extent_l and stencil_extent_r, e.g.
         ! Relative idx is   | -4 | -3 | -2 | -1 |  0 |  1 |  2 |  3 |  4 |
-        rel_idx(:) = MIN(stencil_extent_r, MAX(-stencil_extent_l,             &
+        rel_idx(:) = min(stencil_extent_r, max(-stencil_extent_l,             &
             rel_idx_hi(:) + (2 - j)*sign_disp(:)                              &
         ))
 

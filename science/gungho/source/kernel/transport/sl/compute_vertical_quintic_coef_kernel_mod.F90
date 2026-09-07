@@ -200,9 +200,9 @@ module compute_vertical_quintic_coef_kernel_mod
         z_arr(:) = theta_height(map_wt(1) : map_wt(1)+nlayers)
       end if
 
-      int_disp(:) = INT(displacement(:), i_def)
-      frac_dist(:) = ABS(displacement(:) - REAL(int_disp(:), r_tran))
-      sign_offset(:) = 0.5_r_tran*(1.0_r_tran + SIGN(1.0_r_tran, displacement(:)))
+      int_disp(:) = int(displacement(:), i_def)
+      frac_dist(:) = abs(displacement(:) - real(int_disp(:), r_tran))
+      sign_offset(:) = 0.5_r_tran*(1.0_r_tran + sign(1.0_r_tran, displacement(:)))
 
       ! Wtheta departure heights and indices -------------------------------------
       ! Force bottom departure point to be zero
@@ -211,7 +211,7 @@ module compute_vertical_quintic_coef_kernel_mod
       ! Calculate the index of the level below the departure distance, and the
       ! height of the departure point
       do k = 2, nlayers
-        k_dep(k) = MAX(k - int_disp(k) - INT(sign_offset(k), i_def), 1)
+        k_dep(k) = max(k - int_disp(k) - int(sign_offset(k), i_def), 1)
         z_dep(k) = (                                                           &
           z_arr(k_dep(k)) * (                                                  &
             frac_dist(k)*sign_offset(k)                                        &
@@ -245,15 +245,15 @@ module compute_vertical_quintic_coef_kernel_mod
         dz(nlayers) = dz(nlayers-1)  ! Copy top layer dz
 
         ! Bound W3 departure distances
-        z_dep_w3(:) = MIN(z_arr_w3(nlayers), MAX(z_arr_w3(1), z_dep_w3(:)))
+        z_dep_w3(:) = min(z_arr_w3(nlayers), max(z_arr_w3(1), z_dep_w3(:)))
 
         ! Need to back out the indices of the corresponding levels
         ! Note that these aren't simply the average of the Wtheta indices
         k_dep_w3(1) = 1
         do k = 2, nlayers-1
           ! As first guesses, take the indices of the corresponding Wtheta dep pts
-          j_max = MIN(MAX(k_dep(k), k_dep(k+1)), nlayers)
-          j_min = MIN(k_dep(k), k_dep(k+1))
+          j_max = min(max(k_dep(k), k_dep(k+1)), nlayers)
+          j_min = min(k_dep(k), k_dep(k+1))
           j_dep = j_min
           ! Step downwards from upper guess to lower guess, to find the first
           ! model level that is below the W3 departure height. This gives the

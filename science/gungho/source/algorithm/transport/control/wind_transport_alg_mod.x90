@@ -32,7 +32,7 @@ module wind_transport_alg_mod
                                             get_face_selector_ns
   use log_mod,                        only: log_event,       &
                                             LOG_LEVEL_ERROR, &
-                                            LOG_LEVEL_INFO,  &
+                                            LOG_LEVEL_DEBUG, &
                                             LOG_LEVEL_TRACE
   use sci_mapping_constants_mod,      only: get_project_xdot_to_w2,  &
                                             get_project_ydot_to_w2,  &
@@ -53,7 +53,9 @@ module wind_transport_alg_mod
   use combine_ws_to_w2_kernel_mod,    only: combine_ws_to_w2_kernel_type
   use apply_wind_metrics_kernel_mod,  only: apply_wind_metrics_kernel_type
   use base_mesh_config_mod,           only: geometry,           &
-                                            geometry_spherical
+                                            geometry_spherical, &
+                                            topology,           &
+                                            topology_fully_periodic
   use integer_field_mod,              only: integer_field_type
 
   implicit none
@@ -127,6 +129,8 @@ contains
     type(field_type)                    :: u_w2_inc_with_metrics
     type(integer_field_type), pointer   :: face_selector_ew
     type(integer_field_type), pointer   :: face_selector_ns
+    logical(kind=l_def)                 :: geometry_is_spherical,    &
+                                           topology_is_fully_periodic
 
 
     if ( LPROF ) call start_timing( id_to, 'transport.wind' )
@@ -172,8 +176,8 @@ contains
           face_selector_ns => get_face_selector_ns(mesh)
 
           dA => get_da_at_w2( mesh )
-          call invoke(setval_c(uv_w2h_n, 0.0_r_def) )
-          call invoke(split_w2_to_ws_kernel_type( uv_w2h_n, w_wt_n,     &
+          call invoke(setval_c(uv_w2h_n, 0.0_r_def),                    &
+                      split_w2_to_ws_kernel_type( uv_w2h_n, w_wt_n,     &
                                                   wind_n, chi(3), dA,   &
                                                   face_selector_ew,     &
                                                   face_selector_ns ) )
@@ -210,8 +214,8 @@ contains
                                   transport_metadata )
             call transport_field( chi2_d, chi2_n, transport_controller,    &
                                   transport_metadata )
-            call log_field_minmax( LOG_LEVEL_INFO, 'chi1_d', chi1_d )
-            call log_field_minmax( LOG_LEVEL_INFO, 'chi2_d', chi2_d )
+            call log_field_minmax( LOG_LEVEL_DEBUG, 'chi1_d', chi1_d )
+            call log_field_minmax( LOG_LEVEL_DEBUG, 'chi2_d', chi2_d )
             ! Now compute chi1_d & chi2_d on W2 points for using later
             rmultiplicity_w2 => get_rmultiplicity_fv(W2, mesh%get_id())
             call invoke( setval_c( chi1_d_w2, 0.0_r_def ) ,                   &
@@ -226,6 +230,8 @@ contains
           call u_w2_inc%initialise( w2_fs, halo_depth=2 )
           call u_w2_inc_with_metrics%initialise( w2_fs )
           mm_w2 => get_mass_matrix_fv(W2, mesh%get_id())
+          geometry_is_spherical = ( geometry == geometry_spherical )
+          topology_is_fully_periodic = (topology == topology_fully_periodic )
           call invoke( name="combine_ws_to_w2_winds",                           &
                        X_minus_Y( uv_w2h_inc, uv_w2h_np1, uv_w2h_n ),           &
                        X_minus_Y( w_wt_inc,   w_wt_np1,   w_wt_n ),             &
@@ -234,10 +240,12 @@ contains
                                                     w_wt_inc,                   &
                                                     face_selector_ew,           &
                                                     face_selector_ns),          &
-                       apply_wind_metrics_kernel_type(u_w2_inc_with_metrics,    &
-                                                      u_w2_inc, stencil_depth,  &
-                                                      da, chi,                  &
-                                                      chi1_d_w2, chi2_d_w2 ),   &
+                       apply_wind_metrics_kernel_type(                          &
+                                       u_w2_inc_with_metrics,                   &
+                                       u_w2_inc, stencil_depth, da, chi,        &
+                                       chi1_d_w2, chi2_d_w2,                    &
+                                       geometry_is_spherical,                   &
+                                       topology_is_fully_periodic ),            &
                        setval_c(rhs_u, 0.0_r_def),                              &
                        matrix_vector_kernel_type(rhs_u, u_w2_inc_with_metrics,  &
                        mm_w2),                                                  &
@@ -359,7 +367,7 @@ contains
           end if
 
         end if ! native wind transport
-        call log_field_minmax( LOG_LEVEL_INFO, 'advection increment', rhs_u )
+        call log_field_minmax( LOG_LEVEL_DEBUG, 'advection increment', rhs_u )
 
       ! ---------------------------------------------------------------------- !
       ! Default form of transport equation

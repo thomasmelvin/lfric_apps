@@ -24,7 +24,7 @@ module split_w2_to_ws_kernel_mod
   use constants_mod,         only: r_def, i_def
   use fs_continuity_mod,     only: W2, W2h, Wtheta
   use kernel_mod,            only: kernel_type
-  use reference_element_mod, only: W, E, N, S
+  use reference_element_mod, only: W, E, N, S, B
 
   implicit none
 
@@ -133,12 +133,9 @@ subroutine split_w2_to_ws_code(nlayers,                    &
 
   ! Internal variables
   integer(kind=i_def) :: k, df, id1, id2
-  integer(kind=i_def) :: local_dofs_x(2), local_dofs_y(2)
-
+  integer(kind=i_def), parameter :: local_dofs_x(2) = (/ W, E /)
+  integer(kind=i_def), parameter :: local_dofs_y(2) = (/ S, N /)
   real(kind=r_def) :: dx_z, dy_z, dz_z
-
-  local_dofs_x = (/ W, E /)
-  local_dofs_y = (/ S, N /)
 
   do df = 1, face_selector_ew(map_w3_2d(1))
     id1 = map_w2h(local_dofs_x(df))
@@ -152,8 +149,8 @@ subroutine split_w2_to_ws_code(nlayers,                    &
     uv_w2h(id1:id1+nlayers-1) = uvw(id2:id2+nlayers-1) &
                               /da(id2:id2+nlayers-1)
   end do
-  w_wt(map_wt(1)+1:map_wt(1)+nlayers-1) = uvw(map_w2(5)+1:map_w2(5)+nlayers-1) &
-                                         /da(map_w2(5)+1:map_w2(5)+nlayers-1)
+  w_wt(map_wt(1)+1:map_wt(1)+nlayers-1) = uvw(map_w2(B)+1:map_w2(B)+nlayers-1) &
+                                         /da(map_w2(B)+1:map_w2(B)+nlayers-1)
   w_wt(map_wt(1)) = 0.0_r_def
   w_wt(map_wt(1)+nlayers) = 0.0_r_def
 
@@ -167,9 +164,9 @@ subroutine split_w2_to_ws_code(nlayers,                    &
       dy_z = dy_z + chi3(map_wx(df)+k)*diff_basis_wx_on_wt(2, df, 1)
       dz_z = dz_z + chi3(map_wx(df)+k)*diff_basis_wx_on_wt(3, df, 1)
     end do
-    w_wt(map_wt(1)+k) = w_wt(map_wt(1)+k) + 0.5_r_def/da(map_w2(5)+k)    &
-                       *(dx_z/dz_z*(uvw(map_w2(1)+k) + uvw(map_w2(3)+k)) &
-                       - dy_z/dz_z*(uvw(map_w2(2)+k) + uvw(map_w2(4)+k)) &
+    w_wt(map_wt(1)+k) = w_wt(map_wt(1)+k) + 0.5_r_def/da(map_w2(B)+k)    &
+                       *(dx_z/dz_z*(uvw(map_w2(W)+k) + uvw(map_w2(E)+k)) &
+                       - dy_z/dz_z*(uvw(map_w2(S)+k) + uvw(map_w2(N)+k)) &
                         )
   end do
 
