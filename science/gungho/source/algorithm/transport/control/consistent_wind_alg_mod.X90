@@ -5,6 +5,7 @@
 
 module consistent_wind_alg_mod
 
+  use config_mod,                        only: config_type
   use constants_mod,                     only: i_def, l_def, r_def
   use log_mod,                           only: log_event, LOG_LEVEL_INFO
   use transport_metadata_collection_mod, only: transport_metadata_collection
@@ -46,6 +47,7 @@ contains
   !!          to compute the orographic gradient instead of the finite element scheme. This
   !!          results in the correct cancellation with the horizontal transport of the field
   !!          over terrain.
+  !> @param[in]     config               Application namelist configuration object
   !> @param[in,out] transport_controller Encapsulating object containing the
   !!                                     transport counter and precomputations
   !> @param[in]     rho_d_latest         Dry density at the latest time level
@@ -54,7 +56,8 @@ contains
   !> @param[in]     model_clock          Model time information
   !> @param[in]     outer                Outer iteration index
   !> @param[in]     cheap_update_step    Whether a cheap controller update is used
-  subroutine consistent_wind_alg(transport_controller, &
+  subroutine consistent_wind_alg(config,               &
+                                 transport_controller, &
                                  rho_d_latest,         &
                                  wind_n,               &
                                  wind_np1,             &
@@ -64,6 +67,7 @@ contains
 
     implicit none
 
+    type(config_type),       intent(in) :: config
     integer(kind=i_def),     intent(in) :: outer
     logical(kind=l_def),     intent(in) :: cheap_update_step
     class(model_clock_type), intent(in) :: model_clock
@@ -92,7 +96,7 @@ contains
 
     ! Get the height field with a big halo
     mesh_id = rho_d_latest%get_mesh_id()
-    chi3_default => get_height_fv(Wtheta, mesh_id)
+    chi3_default => get_height_fv(config, rho_d_latest%get_mesh(), Wtheta)
     call chi3%initialise( chi3_default%get_function_space(), halo_depth = stencil_depth )
     call invoke( setval_X( chi3, chi3_default ) )
 
@@ -113,8 +117,8 @@ contains
     call wind_h%initialise( w2h_fs )
     call wind_v%initialise( w2v_fs )
     call wind_adv%initialise( wind_n%get_function_space() )
-    face_selector_ew => get_face_selector_ew( mesh_id )
-    face_selector_ns => get_face_selector_ns( mesh_id )
+    face_selector_ew => get_face_selector_ew( wind_n%get_mesh() )
+    face_selector_ns => get_face_selector_ns( wind_n%get_mesh() )
     call invoke( aX_plus_bY( wind_adv, 0.5_r_def, wind_n, 0.5_r_def, wind_np1 ), &
                  split_w2_field_kernel_type( wind_h, wind_v, wind_adv,           &
                                              face_selector_ew,                   &
@@ -129,7 +133,7 @@ contains
       call invoke( real_to_real_X( chi3_inc_r_tran, chi3_inc ), &
                    real_to_real_X( wind_h_r_tran, wind_h ),     &
                    real_to_real_X( chi3_r_tran, chi3 ) )
-      call hori_wt_update_alg(chi3_inc_r_tran, wind_h_r_tran, wind_h_r_tran,  &
+      call hori_wt_update_alg(config, chi3_inc_r_tran, wind_h_r_tran, wind_h_r_tran,  &
                               chi3_r_tran, transport_metadata)
       call invoke( real_to_real_X( chi3_inc, chi3_inc_r_tran ) )
     else
@@ -138,7 +142,7 @@ contains
     end if
 
     ! Modify the vertical componenet of the transporting wind
-    chi => get_coordinates(mesh_id)
+    chi => get_coordinates( wind_n%get_mesh() )
     call invoke( consistent_wind_kernel_type(wind_v, wind_adv,                   &
                                              chi3_inc, chi(3)) )
 
@@ -152,7 +156,7 @@ contains
     wind_adv_ptr => wind_adv
     call transport_controller%finalise()
     call transport_controller%initialise(                                      &
-            model_clock, rho_d_latest, wind_adv, wind_adv_ptr, outer,          &
+            config, model_clock, rho_d_latest, wind_adv, wind_adv_ptr, outer,  &
             cheap_update_step                                                  &
     )
   end subroutine consistent_wind_alg
