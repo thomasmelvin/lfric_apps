@@ -743,8 +743,11 @@ contains
     real(r_def)        :: tau_r
 
     integer(tik) :: id
+    integer( i_def ) :: si_iteration
 
     if ( LPROF ) call start_timing( id, 'semi_implicit_timestep' )
+
+    si_iteration = 1_i_def
 
     lbc_option = 0
     cast_dt = real(model_clock%get_seconds_per_step(), r_def)
@@ -1110,11 +1113,12 @@ contains
           !--------------------------------------------------------------------
           ! Solve semi-implicit system: A*inc = rhs, and incement state by inc
           !--------------------------------------------------------------------
-          call semi_implicit_solver_alg_step( self%state, self%rhs_np1, &
-                                              dry_flux_solver,          &
-                                              moist_dyn(gas_law),       &
-                                              mr,                       &
-                                              first_iteration=(inner==1) )
+          call semi_implicit_solver_alg_step( self%state, self%rhs_np1,   &
+                                              dry_flux_solver,            &
+                                              moist_dyn(gas_law),         &
+                                              mr,                         &
+                                              first_iteration=(inner==1), &
+                                              iteration=si_iteration )
 
           if (write_moisture_diag) then
             call moisture_conservation_alg(self%config, self%state(igh_d), mr, &
@@ -1152,6 +1156,8 @@ contains
 
             end if
           end if
+
+          si_iteration = si_iteration + 1
         end do inner_dynamics_loop
         !--------------------------------------------------------------------
         ! End of Inner (nonlinear, coriolis) loop
