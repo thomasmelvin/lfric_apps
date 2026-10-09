@@ -436,7 +436,7 @@ contains
                                    mixed_preconditioner_in,  &
                                    si_tolerance,             &
                                    mixed_solver_a_tol,       &
-                                   si_maximum_iterations,    &
+                                   max_iterations,    &
                                    si_monitor_convergence,   &
                                    si_fail_on_non_converged, &
                                    chebyshev_lmin,           &
@@ -597,7 +597,7 @@ contains
     type(integer_field_type), pointer :: face_selector_ns
     integer(tik)                      :: id_si, id_mix
 
-    integer(kind=i_def) :: max_iterations(4) = (/ 4, 5, 5, 7 /)
+    integer(kind=i_def) :: max_iterations(4) = (/ 3, 5, 5, 6 /)
 
     if ( LPROF ) call start_timing( id_si, 'dynamics.solver' )
 
