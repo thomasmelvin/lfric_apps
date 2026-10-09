@@ -436,7 +436,7 @@ contains
                                    mixed_preconditioner_in,  &
                                    si_tolerance,             &
                                    mixed_solver_a_tol,       &
-                                   max_iterations,           &
+                                   si_maximum_iterations,    &
                                    si_monitor_convergence,   &
                                    si_fail_on_non_converged, &
                                    chebyshev_lmin,           &

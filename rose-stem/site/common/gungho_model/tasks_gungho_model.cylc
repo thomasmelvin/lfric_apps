@@ -34,6 +34,104 @@
         "plot_str": "baroclinic.py $NODAL_DATA_DIR/lfric_diag.nc $PLOT_DIR dcmip dry surface_pressure_temperature",
     }) %}
 
+{% elif task_ns.conf_name == "baroclinic-lmin1p2-C24_MG" %}
+
+    {% do task_dict.update({
+        "opt_confs": ["baroclinic","lmin1p2"],
+        "resolution": "C24_MG",
+        "DT": 3600,
+        "threads": 4,
+        "mpi_parts": 6,
+        "tsteps": 240,
+        "plot_str": "baroclinic.py $NODAL_DATA_DIR/lfric_diag.nc $PLOT_DIR dcmip dry surface_pressure_temperature",
+    }) %}
+
+{% elif task_ns.conf_name == "baroclinic-lmin1p3-C24_MG" %}
+
+    {% do task_dict.update({
+        "opt_confs": ["baroclinic","lmin1p3"],
+        "resolution": "C24_MG",
+        "DT": 3600,
+        "threads": 4,
+        "mpi_parts": 6,
+        "tsteps": 240,
+        "plot_str": "baroclinic.py $NODAL_DATA_DIR/lfric_diag.nc $PLOT_DIR dcmip dry surface_pressure_temperature",
+    }) %}
+
+{% elif task_ns.conf_name == "baroclinic-lmax2p2-C24_MG" %}
+
+    {% do task_dict.update({
+        "opt_confs": ["baroclinic","lmax2p2"],
+        "resolution": "C24_MG",
+        "DT": 3600,
+        "threads": 4,
+        "mpi_parts": 6,
+        "tsteps": 240,
+        "plot_str": "baroclinic.py $NODAL_DATA_DIR/lfric_diag.nc $PLOT_DIR dcmip dry surface_pressure_temperature",
+    }) %}
+
+{% elif task_ns.conf_name == "baroclinic-lmax2p3-C24_MG" %}
+
+    {% do task_dict.update({
+        "opt_confs": ["baroclinic","lmax2p3"],
+        "resolution": "C24_MG",
+        "DT": 3600,
+        "threads": 4,
+        "mpi_parts": 6,
+        "tsteps": 240,
+        "plot_str": "baroclinic.py $NODAL_DATA_DIR/lfric_diag.nc $PLOT_DIR dcmip dry surface_pressure_temperature",
+    }) %}
+
+{% elif task_ns.conf_name == "baroclinic-lmin1p2-lmax2p2-C24_MG" %}
+
+    {% do task_dict.update({
+        "opt_confs": ["baroclinic","lmax2p2","lmin1p2"],
+        "resolution": "C24_MG",
+        "DT": 3600,
+        "threads": 4,
+        "mpi_parts": 6,
+        "tsteps": 240,
+        "plot_str": "baroclinic.py $NODAL_DATA_DIR/lfric_diag.nc $PLOT_DIR dcmip dry surface_pressure_temperature",
+    }) %}
+
+{% elif task_ns.conf_name == "baroclinic-lmin1p2-lmax2p3-C24_MG" %}
+
+    {% do task_dict.update({
+        "opt_confs": ["baroclinic","lmax2p3","lmin1p2"],
+        "resolution": "C24_MG",
+        "DT": 3600,
+        "threads": 4,
+        "mpi_parts": 6,
+        "tsteps": 240,
+        "plot_str": "baroclinic.py $NODAL_DATA_DIR/lfric_diag.nc $PLOT_DIR dcmip dry surface_pressure_temperature",
+    }) %}
+
+{% elif task_ns.conf_name == "baroclinic-lmin1p3-lmax2p2-C24_MG" %}
+
+    {% do task_dict.update({
+        "opt_confs": ["baroclinic","lmax2p3","lmin1p2"],
+        "resolution": "C24_MG",
+        "DT": 3600,
+        "threads": 4,
+        "mpi_parts": 6,
+        "tsteps": 240,
+        "plot_str": "baroclinic.py $NODAL_DATA_DIR/lfric_diag.nc $PLOT_DIR dcmip dry surface_pressure_temperature",
+    }) %}
+
+{% elif task_ns.conf_name == "baroclinic-lmin1p3-lmax2p3-C24_MG" %}
+
+    {% do task_dict.update({
+        "opt_confs": ["baroclinic","lmax2p3","lmin1p3"],
+        "resolution": "C24_MG",
+        "DT": 3600,
+        "threads": 4,
+        "mpi_parts": 6,
+        "tsteps": 240,
+        "plot_str": "baroclinic.py $NODAL_DATA_DIR/lfric_diag.nc $PLOT_DIR dcmip dry surface_pressure_temperature",
+    }) %}
+
+
+
 {% elif task_ns.conf_name == "baroclinic-C48_MG" %}
 
     {% do task_dict.update({
