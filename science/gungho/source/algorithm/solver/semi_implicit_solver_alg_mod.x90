@@ -351,7 +351,7 @@ contains
     type(mixed_operator_type),                          intent(inout) :: mixed_operator_out
     class(abstract_iterative_solver_type), allocatable, intent(out)   :: mixed_solver_out
 
-    integer(kind=i_def), intent(in) :: max_iterations
+    integer(kind=i_def), intent(in) :: max_iterations, max_iters_to_use
 
     call log_event( "create_mixed_solver: starting", LOG_LEVEL_INFO )
 
@@ -431,12 +431,17 @@ contains
                                       si_fail_on_non_converged, &
                                       mixed_jacobi_relaxation ) )
     case(SI_METHOD_CHEBYSHEV)
+      if ( si_monitor_convergence ) then
+        max_iters_to_use = si_maximum_iterations
+      else
+        max_iters_to_use = max_iterations
+      end if
       allocate( mixed_solver_out,                            &
                 source = chebyshev_type( mixed_operator_out, &
                                    mixed_preconditioner_in,  &
                                    si_tolerance,             &
                                    mixed_solver_a_tol,       &
-                                   max_iterations,    &
+                                   max_iters_to_use,         &
                                    si_monitor_convergence,   &
                                    si_fail_on_non_converged, &
                                    chebyshev_lmin,           &
