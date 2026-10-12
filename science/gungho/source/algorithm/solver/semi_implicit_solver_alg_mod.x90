@@ -351,7 +351,8 @@ contains
     type(mixed_operator_type),                          intent(inout) :: mixed_operator_out
     class(abstract_iterative_solver_type), allocatable, intent(out)   :: mixed_solver_out
 
-    integer(kind=i_def), intent(in) :: max_iterations, max_iters_to_use
+    integer(kind=i_def), intent(in) :: max_iterations
+    integer(kind=i_def) :: max_iters_to_use
 
     call log_event( "create_mixed_solver: starting", LOG_LEVEL_INFO )
 
