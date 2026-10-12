@@ -603,7 +603,7 @@ contains
     type(integer_field_type), pointer :: face_selector_ns
     integer(tik)                      :: id_si, id_mix
 
-    integer(kind=i_def) :: max_iterations(4) = (/ 4, 5, 5, 7 /)
+    integer(kind=i_def) :: max_iterations(4) = (/ 3, 5, 4, 6 /)
 
     if ( LPROF ) call start_timing( id_si, 'dynamics.solver' )
 
