@@ -334,6 +334,7 @@ contains
                                              si_method_prec_only,                   &
                                              si_method_jacobi,                      &
                                              si_method_chebyshev,                   &
+                                             si_method_chebyshev_gcr,               &
                                              si_monitor_convergence =>              &
                                                              monitor_convergence,   &
                                              si_fail_on_non_converged =>            &
@@ -437,16 +438,45 @@ contains
       else
         max_iters_to_use = max_iterations
       end if
-      allocate( mixed_solver_out,                            &
-                source = chebyshev_type( mixed_operator_out, &
-                                   mixed_preconditioner_in,  &
-                                   si_tolerance,             &
-                                   mixed_solver_a_tol,       &
-                                   max_iters_to_use,         &
-                                   si_monitor_convergence,   &
-                                   si_fail_on_non_converged, &
-                                   chebyshev_lmin,           &
-                                   chebyshev_lmax ) )
+        allocate( mixed_solver_out,                            &
+                  source = chebyshev_type( mixed_operator_out, &
+                                     mixed_preconditioner_in,  &
+                                     si_tolerance,             &
+                                     mixed_solver_a_tol,       &
+                                     max_iters_to_use,         &
+                                     si_monitor_convergence,   &
+                                     si_fail_on_non_converged, &
+                                     chebyshev_lmin,           &
+                                     chebyshev_lmax ) )
+    case(SI_METHOD_CHEBYSHEV_GCR)
+      if ( si_monitor_convergence ) then
+        max_iters_to_use = si_maximum_iterations
+      else
+        max_iters_to_use = max_iterations
+      end if
+      if ( max_iters_to_use == 7 ) then
+        ! Default back to GCR with 10^-1 tolerance
+        allocate( mixed_solver_out,                                 &
+                  source = block_gcr_type( mixed_operator_out,      &
+                                           mixed_preconditioner_in, &
+                                           mixed_gcrk,              &
+                                           si_tolerance,            &
+                                           mixed_solver_a_tol,      &
+                                           si_maximum_iterations,   &
+                                           .true.,  &
+                                           .true. ) )
+      else
+        allocate( mixed_solver_out,                            &
+                  source = chebyshev_type( mixed_operator_out, &
+                                     mixed_preconditioner_in,  &
+                                     si_tolerance,             &
+                                     mixed_solver_a_tol,       &
+                                     max_iters_to_use,         &
+                                     si_monitor_convergence,   &
+                                     si_fail_on_non_converged, &
+                                     chebyshev_lmin,           &
+                                     chebyshev_lmax ) )
+      end if
     case default
       call log_event( "Unknown mixed solver specified", LOG_LEVEL_ERROR )
     end select
@@ -603,7 +633,7 @@ contains
     type(integer_field_type), pointer :: face_selector_ns
     integer(tik)                      :: id_si, id_mix
 
-    integer(kind=i_def) :: max_iterations(4) = (/ 3, 5, 4, 6 /)
+    integer(kind=i_def) :: max_iterations(4) = (/ 3, 5, 4, 7 /)
 
     if ( LPROF ) call start_timing( id_si, 'dynamics.solver' )
 

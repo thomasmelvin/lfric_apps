@@ -9,6 +9,28 @@
 {# Azspice Test Groups #}
 {# ###################################################################### #}
 {% do site_groups.update({
+    "lfric_atm_nwp_parameter_sweep": [
+        "lfric_atm_nwp_gal9-gcr-C896_MG_ex1a_cce_fast-debug-32bit",
+        "lfric_atm_nwp_gal9-chebyshev-gcr-C896_MG_ex1a_cce_fast-debug-32bit",
+        "lfric_atm_nwp_gal9-lmin0p55-lmax2p6-C896_MG_ex1a_cce_fast-debug-32bit",
+    ],
+    "lfric_atm_nwp_parameter_sweep2": [
+        "lfric_atm_nwp_gal9-C48_MG_ex1a_cce_fast-debug-32bit",
+        "lfric_atm_nwp_gal9-gcr-C48_MG_ex1a_cce_fast-debug-32bit",
+        "lfric_atm_nwp_gal9-lmin0p55-C48_MG_ex1a_cce_fast-debug-32bit",
+        "lfric_atm_nwp_gal9-lmax2p6-C48_MG_ex1a_cce_fast-debug-32bit",
+        "lfric_atm_nwp_gal9-lmin0p55-lmax2p6-C48_MG_ex1a_cce_fast-debug-32bit",
+        "lfric_atm_nwp_gal9-C224_MG_ex1a_cce_fast-debug-32bit",
+        "lfric_atm_nwp_gal9-gcr-C224_MG_ex1a_cce_fast-debug-32bit",
+        "lfric_atm_nwp_gal9-lmin0p55-C224_MG_ex1a_cce_fast-debug-32bit",
+        "lfric_atm_nwp_gal9-lmax2p6-C224_MG_ex1a_cce_fast-debug-32bit",
+        "lfric_atm_nwp_gal9-lmin0p55-lmax2p6-C224_MG_ex1a_cce_fast-debug-32bit",
+        "lfric_atm_nwp_gal9-C896_MG_ex1a_cce_fast-debug-32bit",
+        "lfric_atm_nwp_gal9-gcr-C896_MG_ex1a_cce_fast-debug-32bit",
+        "lfric_atm_nwp_gal9-lmin0p55-C896_MG_ex1a_cce_fast-debug-32bit",
+        "lfric_atm_nwp_gal9-lmax2p6-C896_MG_ex1a_cce_fast-debug-32bit",
+        "lfric_atm_nwp_gal9-lmin0p55-lmax2p6-C896_MG_ex1a_cce_fast-debug-32bit",
+    ],
     "lfric_atm_nwp_azspice_developer": [
         "lfric_atm_nwp_gal9-C12_azspice_gnu_fast-debug-32bit",
         "lfric_atm_nwp_gal9-C12_azspice_gnu_fast-debug-64bit",

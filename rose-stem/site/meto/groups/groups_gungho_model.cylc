@@ -7,16 +7,24 @@
 
 {# Azspice Groups #}
 {% do site_groups.update({
+    "gungho_model_bubble": [
+        "gungho_model_cart-warm3dbubble_azspice_gnu_fast-debug-64bit",
+        "gungho_model_cart-warm3dbubble-hpred_azspice_gnu_fast-debug-64bit",
+    ],
+    "gungho_model_chebyshev": [
+        "gungho_model_baroclinic-C192_MG_ex1a_cce_fast-debug-32bit",
+        "gungho_model_baroclinic-lmin0p55-C192_MG_ex1a_cce_fast-debug-32bit",
+        "gungho_model_baroclinic-lmin0p55-lmax2p3-C192_MG_ex1a_cce_fast-debug-32bit",
+        "gungho_model_baroclinic-lmin0p55-lmax2p4-C192_MG_ex1a_cce_fast-debug-32bit",
+        "gungho_model_baroclinic-lmin0p55-lmax2p6-C192_MG_ex1a_cce_fast-debug-32bit",
+    ],
     "gungho_model_test": [
         "gungho_model_baroclinic-C24_MG_azspice_gnu_fast-debug-64bit",
-        "gungho_model_baroclinic-lmin1p2-C24_MG_azspice_gnu_fast-debug-64bit",
-        "gungho_model_baroclinic-lmin1p3-C24_MG_azspice_gnu_fast-debug-64bit",
-        "gungho_model_baroclinic-lmax2p2-C24_MG_azspice_gnu_fast-debug-64bit",
-        "gungho_model_baroclinic-lmax2p3-C24_MG_azspice_gnu_fast-debug-64bit",
-        "gungho_model_baroclinic-lmin1p2-lmax2p2-C24_MG_azspice_gnu_fast-debug-64bit",
-        "gungho_model_baroclinic-lmin1p3-lmax2p2-C24_MG_azspice_gnu_fast-debug-64bit",
-        "gungho_model_baroclinic-lmin1p2-lmax2p3-C24_MG_azspice_gnu_fast-debug-64bit",
-        "gungho_model_baroclinic-lmin1p3-lmax2p3-C24_MG_azspice_gnu_fast-debug-64bit",
+        "gungho_model_baroclinic-gcr-C24_MG_azspice_gnu_fast-debug-64bit",
+        "gungho_model_baroclinic-lmin0p9-C24_MG_azspice_gnu_fast-debug-64bit",
+        "gungho_model_baroclinic-lmin0p8-C24_MG_azspice_gnu_fast-debug-64bit",
+        "gungho_model_baroclinic-lmin0p9-lmax2p3-C24_MG_azspice_gnu_fast-debug-64bit",
+        "gungho_model_baroclinic-lmin0p8-lmax2p3-C24_MG_azspice_gnu_fast-debug-64bit",
     ],
     "gungho_model_azspice_developer": [
         "gungho_model_agnesi_hyd_cart-BiP120x8-2000x2000_azspice_gnu_fast-debug-64bit",

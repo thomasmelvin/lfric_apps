@@ -157,7 +157,23 @@
 {% elif task_ns.conf_name == "cart-warm3dbubble" %}
 
     {% do task_dict.update({
-        "opt_confs": ["warm3dbubble"],
+        "opt_confs": ["warm3dbubble","gcr"],
+        "resolution": "BiP100x100-10x10",
+        "DT": 1.25,
+        "mpi_parts": 5,
+        "threads": 3,
+        "panel_decomp": "row",
+        "use_xios": false,
+        "tsteps": 360,
+        "wallclock": 60,
+        "kgo_checks": [],
+        "plot_str": "warm3dbubble.py diagGungho $NODAL_DATA_DIR 100 100 theta T000000:T000160:T000320 $PLOT_DIR"
+    }) %}
+
+{% elif task_ns.conf_name == "cart-warm3dbubble-hpred" %}
+
+    {% do task_dict.update({
+        "opt_confs": ["warm3dbubble","gcr","hpred"],
         "resolution": "BiP100x100-10x10",
         "DT": 1.25,
         "mpi_parts": 5,
