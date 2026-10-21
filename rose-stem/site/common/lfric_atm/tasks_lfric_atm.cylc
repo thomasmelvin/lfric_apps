@@ -1324,6 +1324,7 @@
 
     {% do task_dict.update({
         "opt_confs": ["um_dump","oper_diags_hres"],
+        "mpi_parts": 4704,
     }) %}
 
 {% endif %}
@@ -1334,6 +1335,17 @@
         "resolution": "C896_MG_op",
         "mesh_cpus": 64,
         "mesh_memory": [20, "GB"],
+    }) %}
+
+{% endif %}
+
+{% if task_ns.conf_name.startswith("nwp_gal10-C896_MG_op_4704") %}
+
+    {% do task_dict.update({
+        "resolution": "C896_MG_op",
+        "mesh_cpus": 64,
+        "mesh_memory": [20, "GB"],
+        "mpi_parts": 4704,
     }) %}
 
 {% endif %}
