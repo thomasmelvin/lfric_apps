@@ -5,7 +5,7 @@
 {# ########################################################################### #}
 {% do LOG.debug("Entered site/meto/macros/macros_ex1a.cylc") %}
 
-{% set module_base = "module use /home/users/lfricadmin/lmod ; module load lfric-arch/" %}
+{% set module_base = "module use /home/users/lfricadmin/lmod" %}
 {% set genoa_cores_per_node = 192 %}
 {% set genoa_socket_per_node = 2 %}
 {% set milan_cores_per_node = 128 %}

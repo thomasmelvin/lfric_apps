@@ -15,12 +15,20 @@
                             'module load PrgEnv-gnu ; '~
                             'module load gcc/12.2.0 ; '~
                             'module load cray-mpich/8.1.27 ; '~
+                            'export FI_CXI_RX_MATCH_MODE=software; '~
+                            'export FI_CXI_RDZV_THRESHOLD=524288; '~
+                            'export FI_CXI_RDZV_EAGER_SIZE=16384; '~
+                            'export FI_CXI_DEFAULT_TX_SIZE=16384; '~
                             'module load lfric-gnu/12.2.0/3.2 || true' %}
 
 {% set ex1a_compiler_cce =  'module switch PrgEnv-cray PrgEnv-cray/8.4.0 ; ' ~
                             'module load cpe/23.05 ; '~
                             'module switch cce cce/15.0.0 ; '~
                             'module load cray-mpich/8.1.27 ; '~
+                            'export FI_CXI_RX_MATCH_MODE=software; '~
+                            'export FI_CXI_RDZV_THRESHOLD=524288; '~
+                            'export FI_CXI_RDZV_EAGER_SIZE=32768; '~
+                            'export FI_CXI_DEFAULT_TX_SIZE=32768; '~
                             'module load lfric-cray/15.0.0/3.2 || true' %}
 
 {% set ex1a_coupled_cce = 'module unload xios/2.2701 || true ; ' ~

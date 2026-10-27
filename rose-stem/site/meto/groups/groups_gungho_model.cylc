@@ -7,10 +7,15 @@
 
 {# Azspice Groups #}
 {% do site_groups.update({
+    "gungho_model_comparison": [
+        "gungho_model_baroclinic-C64_MG_ex1a_gnu_fast-debug-64bit",
+        "gungho_model_baroclinic-C96_MG_ex1a_gnu_fast-debug-64bit",
+        "gungho_model_baroclinic-C128_MG_ex1a_gnu_fast-debug-64bit",
+    ],
     "gungho_model_azspice_developer": [
         "gungho_model_agnesi_hyd_cart-BiP120x8-2000x2000_azspice_gnu_fast-debug-64bit",
         "gungho_model_baroclinic-C24_MG_azspice_gnu_fast-debug-64bit",
-        "gungho_model_baroclinic-C48_MG_azspice_gnu_fast-debug-64bit",
+        "gungho_model_baroclinic-c48_mg_azspice_gnu_fast-debug-64bit",
         "gungho_model_baroclinic-C48_MG-2panel_azspice_gnu_fast-debug-64bit",
         "gungho_model_baroclinic-C48_MG-3panel_azspice_gnu_fast-debug-64bit",
         "gungho_model_baroclinic-pert-C24_MG_azspice_gnu_fast-debug-64bit",
