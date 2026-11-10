@@ -29,6 +29,7 @@
                             'export FI_CXI_RDZV_THRESHOLD=524288; '~
                             'export FI_CXI_RDZV_EAGER_SIZE=32768; '~
                             'export FI_CXI_DEFAULT_TX_SIZE=32768; '~
+                            'export MPICH_ENV_DISPLAY=1; '~
                             'module load lfric-cray/15.0.0/3.2 || true' %}
 
 {% set ex1a_coupled_cce = 'module unload xios/2.2701 || true ; ' ~
