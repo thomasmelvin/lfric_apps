@@ -23,6 +23,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from scipy.interpolate import griddata
+from scipy.interpolate import interp1d
 from read_data import read_ugrid_data
 # Use magma colormap
 try:
@@ -40,7 +41,7 @@ plot_lon = 360
 plot_lat = 280
 
 
-def make_figures(filein, plotpath, fields, vertical_spacing, formulation):
+def make_figures(filein, plotpath, fields, vertical_spacing):
 
     # Compute the vertical grid
     lid = 30.
@@ -78,162 +79,252 @@ def make_figures(filein, plotpath, fields, vertical_spacing, formulation):
 
     direction = 'xy'  # , 'yz', 'xz'
 
-    for t in [-1]:
-        if fields is None:
-            fields = ['surface_pressure_temperature']
+    Wcube = read_ugrid_data(filein, 'w_in_wth')
+    w_time = Wcube.coord('time')
+    if w_time.units.is_time_reference():
+        w_start = w_time.units.num2date(0)
+        w_seconds = np.array([
+            (date - w_start).total_seconds()
+            for date in w_time.units.num2date(w_time.points)
+        ])
+    else:
+        w_seconds = w_time.units.convert(w_time.points, 'seconds')
+    day_one = np.flatnonzero(np.isclose(w_seconds, 24*3600, rtol=0, atol=0.1))
+    if day_one.size:
+        wind_level = 1
+        xw = np.around(Wcube.coord('longitude').points, decimals=5)
+        yw = np.around(Wcube.coord('latitude').points, decimals=5)
+        xiw = np.linspace(np.amin(xw), np.amax(xw), nx)
+        yiw = np.linspace(np.amin(yw), np.amax(yw), ny)
+        xfw, yfw = np.meshgrid(xiw, yiw)
+        data = Wcube[int(day_one[0]), wind_level].data
+        w_day_one = griddata((xw, yw), data, (xfw, yfw), method='linear')
+        w_nearest = griddata((xw, yw), data, (xfw, yfw), method='nearest')
+        missing = np.isnan(w_day_one)
+        w_day_one[missing] = w_nearest[missing]
+        w_day_one -= np.mean(w_day_one, axis=1, keepdims=True)
 
-        for field in fields:
-            if field == 'surface_pressure_temperature':
-                combined_fields = ['exner', 'theta']
-            else:
-                combined_fields = [field]
+        #w_limit = max(float(np.max(np.abs(w_day_one))), np.finfo(float).eps)
+        w_limit = 5.5e-6
+        w_levels = np.linspace(-w_limit, w_limit, 21)
+        fig, ax = plt.subplots(figsize=(6, 3.4))
+        cf_w = ax.contourf(
+            xfw, yfw, w_day_one, levels=w_levels, cmap="RdBu_r",
+            extend="both",
+        )
+        ax.set_xlabel("Longitude [degrees E]")
+        ax.set_ylabel("Latitude [degrees N]")
+        ax.set_title("Vertical velocity anomaly, level 1, day 1")
+        fig.colorbar(cf_w, ax=ax, pad=0.02, label="w - zonal mean(w) [m/s]")
+        fig.tight_layout()
+        out = '%s/baroclinic_plot-w-anomaly-level1-day1.0-%s.png' % \
+            (plotpath, direction)
+        fig.savefig(out, dpi=150, bbox_inches="tight")
+        plt.close(fig)
+        print(f"  Saved: {out}")
+    else:
+        print("  No vertical velocity output at day 1; skipping anomaly plot")
 
-            interp_fig, ax = plt.subplots(figsize=(20, 10))
+    for t in [-2, -1]:
 
-            for cfield in combined_fields:
+        fig, axes = plt.subplots(
+            1, 2, figsize=(10, 3.4), sharex=True, sharey=True)
+        axes = axes[None, :]
+        Tcube = read_ugrid_data(filein, 'theta')
+        Pcube = read_ugrid_data(filein, 'exner')
+        Ucube = read_ugrid_data(filein, 'u_in_w2h')
+        Wcube = read_ugrid_data(filein, 'w_in_wth')
 
-                cube = read_ugrid_data(filein, cfield)
-                # Vertical levels will be last entry in dimension coords
-                levels_name = cube.dim_coords[-1].name()
-                # Set some levels for contours:
-                levels = None
-                if cfield == 'air_potential_temperature' or cfield == 'theta':
-                    levels = np.linspace(220, 330, 12)
-                elif cfield == 'eastward_wind' or cfield == 'u_in_w2h':
-                    if (formulation == 'moist'):
-                        levels = np.arange(-54, 72, 6.)
-                    else:
-                        levels = np.arange(-20, 36, 4.)
-                elif cfield == 'northward_wind' or cfield == 'v_in_w2h':
-                    if (formulation == 'moist'):
-                        levels = np.linspace(-50, 75, 14)
-                    else:
-                        levels = np.linspace(-25, 40, 14)
-                elif cfield == 'upward_air_velocity' or cfield == 'w_in_wth':
-                    if (formulation == 'moist'):
-                        levels = np.linspace(-0.4, 0.4, 11)
-                    else:
-                        levels = np.linspace(-0.3, 0.3, 11)
-                elif cfield == 'exner_pressure' or cfield == 'exner':
-                    # Exner will be converted to hPa
-                    levels = np.linspace(916, 1020, 14)
-                elif cfield == 'air_density':
-                    levels = np.arange(0, 1.4, 0.05)
-                elif cfield == 'm_cl':
-                    levels = np.arange(0.0, 7.5e-3, 0.5e-3)
-                elif cfield == 'm_v':
-                    levels = np.arange( 0.0, 5.0e-3, 2.0e-4)
+        T_levels = np.arange(220, 310 + 10, 10)
+        ps_levels = np.arange(930, 1030 + 10, 10)
+        #ps_levels = np.arange(916, 1012 + 8, 8) # Match Gungho Spherical paper
 
-                n_levs = len(cube.coord(levels_name).points)
+        Tn_levs = len(Tcube.coord(Tcube.dim_coords[-1].name()).points)
+        Pn_levs = len(Pcube.coord(Pcube.dim_coords[-1].name()).points)
+        Un_levs = len(Ucube.coord(Ucube.dim_coords[-1].name()).points)
+        Wn_levs = len(Wcube.coord(Wcube.dim_coords[-1].name()).points)
 
-                plot_data = np.zeros((ny, nx, n_levs))
+        T_data = np.zeros((ny, nx, Tn_levs))
+        P_data = np.zeros((ny, nx, Pn_levs))
+        U_data = np.zeros((ny, nx))
+        W_data = np.zeros((ny, nx))
 
-                time = np.around(cube.coord('time').points, decimals=1)
+        time = np.around(Tcube.coord('time').points, decimals=1)
+        day = time[t]/(24*3600)
 
-                # Compute the horizontal grid
-                x = np.around(cube.coord('longitude').points, decimals=5)
-                y = np.around(cube.coord('latitude').points, decimals=5)
+        # Compute the horizontal grid
+        x = np.around(Tcube.coord('longitude').points, decimals=5)
+        y = np.around(Tcube.coord('latitude').points, decimals=5)
 
-                xmin = np.amin(x)
-                xmax = np.amax(x)
-                ymin = np.amin(y)
-                ymax = np.amax(y)
+        xmin = np.amin(x)
+        xmax = np.amax(x)
+        ymin = np.amin(y)
+        ymax = np.amax(y)
 
-                # Generate a regular grid to interpolate the data.
-                xi = np.linspace(xmin, xmax, nx)
-                yi = np.linspace(ymin, ymax, ny)
+        # Generate a regular grid to interpolate the data.
+        xi = np.linspace(xmin, xmax, nx)
+        yi = np.linspace(ymin, ymax, ny)
 
-                xf, yf = np.meshgrid(xi, yi)
+        xf, yf = np.meshgrid(xi, yi)
 
-                # Choose the correct vertical level set
-                if n_full == n_levs:
-                    zi = zi_f
-                else:
-                    zi = zi_h
+        # Choose the correct vertical level set
+        ziT = zi_f
+        ziP = zi_h
 
-                # Interpolate using delaunay triangularization
-                for p, level in enumerate(range(n_levs)):
-                    data = cube.data[t, level]
-                    fi = griddata((x, y), data, (xf, yf), method='linear')
-                    fi_n = griddata((x, y), data, (xf, yf), method='nearest')
-                    fi[np.isnan(fi)] = fi_n[np.isnan(fi)]
+        # Interpolate using delaunay triangularization
+        for p, level in enumerate(range(Tn_levs)):
+            data = Tcube[t, level].data
+            fi = griddata((x, y), data, (xf, yf), method='linear')
+            fi_n = griddata((x, y), data, (xf, yf), method='nearest')
+            fi[np.isnan(fi)] = fi_n[np.isnan(fi)]
+            T_data[:, :, level] = fi
 
-                    plot_data[:, :, level] = fi
+        for p, level in enumerate(range(Pn_levs)):
+            data = Pcube[t, level].data
+            fi = griddata((x, y), data, (xf, yf), method='linear')
+            fi_n = griddata((x, y), data, (xf, yf), method='nearest')
+            fi[np.isnan(fi)] = fi_n[np.isnan(fi)]
+            # Convert to hPa
+            rd = 287.05
+            p0 = 100000.0
+            kappa = rd/1005.0
+            P_data[:, :, level] = 0.01*fi**(1.0/kappa) * p0
 
-                    if cfield == 'exner':
-                        # Convert to hPa
-                        rd = 287.05
-                        p0 = 100000.0
-                        kappa = rd/1005.0
-                        plot_data[:, :, level] = 0.01*fi**(1.0/kappa) * p0
+        lat, lon = np.meshgrid(yi, xi)
+        # Extrapolate pressure to the surface
+        P0 = P_data[:, :, 0] + (zi_f[0] - zi_h[0]) * \
+            (P_data[:, :, 0] - P_data[:, :, 1]) \
+            / (zi_h[0] - zi_h[1])
 
-                if (cfield == 'm_v' or  cfield == 'm_cl'):
-                    # Plot level 10 for moisture fields
-                    level = 10
-                    cmap = magma.reversed()
-                else:
-                    level = 0
-                    cmap = magma
 
-                if direction == 'xz':
-                    lon, height = np.meshgrid(xi, zi)
-                    CS = ax.contourf(lon, height,
-                                        plot_data[:, plot_lat, :].T,
-                                        levels=levels, cmap=cmap)
-                    plt.colorbar(cmap=cmap)
-                    CL = ax.contour(lat, height,
-                                        plot_data[:, plot_lat, :].T,
-                                        levels=levels, linewidths=0.5,
-                                        colors='k')
-                    ax.title(['lat = ', yi[plot_lat]*360./np.real(nx)])
-                if direction == 'yz':
-                    lat, height = np.meshgrid(yi, zi)
-                    CS = ax.contourf(lat, height,
-                                        plot_data[:, plot_long, :].T,
-                                        levels=levels, cmap=cmap)
-                    ax.colorbar(cmap=cmap)
-                    CL = ax.contour(lat, height,
-                                        plot_data[:, plot_long, :].T,
-                                        levels=levels, linewidths=0.5,
-                                        colors='k')
-                    ax.title(['long = ', xi[plot_long]*360./np.real(nx)])
-                if direction == 'xy':
-                    lat, lon = np.meshgrid(yi, xi)
-                    if cfield == 'exner':
-                        # Extrapolate data to the surface
-                        dz = plot_data[:, :, 0] + (zi_f[0] - zi_h[0]) * \
-                            (plot_data[:, :, 0] - plot_data[:, :, level]) \
-                            / (zi_h[0] - zi_h[1])
-                    else:
-                        dz = plot_data[:, :, level]
-                    if cfield != 'exner':
-                        CS = ax.contourf(lon, lat,
-                                            plot_data[:, :, level].T,
-                                            levels=levels, cmap=cmap)
-                        _ = interp_fig.colorbar(CS, ax=ax)
-                    if cfield != 'theta':
-                        CL = ax.contour(lon, lat, dz.T, levels=levels,
-                                            linewidths=1.0, colors='k')
-                        ax.clabel(CL, CL.levels[1::2], fontsize=15,
-                                    inline=1, fmt='%3.1f')
+        # Compute T850
+        exner850 = (850.0*100.0/p0)**(kappa)
+        T850 = np.zeros([ny,nx])       
+        for i in range(nx):
+            for j in range(ny):
+              f = interp1d(P_data[j,i,:], zi_h)
+              z850 =  f(850.0)
+              f = interp1d(zi_f, T_data[j,i,:])
+              T850[j,i] = f(z850)*exner850
 
-            pngfile = '%s/baroclinic_plot-%s-time%s-%s.png' % \
-                (plotpath, cfield, time[t], direction)
-            plt.savefig(pngfile)
-            plt.close()
+        # Plot Surface Pressure
+        ax_ps = axes[0, 0]
+        cf_ps = ax_ps.contourf(
+            lon, lat, P0.T, levels=ps_levels, cmap="RdBu_r", extend="both",
+        )
+        cs_ps = ax_ps.contour(
+            lon, lat, P0.T, levels=ps_levels, colors="k", linewidths=0.5,
+        )
+        ax_ps.clabel(cs_ps, fmt="%d", fontsize=6)
+        ax_ps.set_ylabel("Lat [°N]")
+        ax_ps.set_title(f"ps [hPa]")
+        plt.colorbar(cf_ps, ax=ax_ps, pad=0.02, label="ps [hPa]")
+
+        # Plot T850
+        ax_T = axes[0, 1]
+        cf_T = ax_T.contourf(
+            lon, lat, T850.T, levels=T_levels, cmap="RdYlBu_r", extend="both",
+        )
+        cs_T = ax_T.contour(
+            lon, lat, T850.T, levels=T_levels, colors="k", linewidths=0.5,
+        )
+        ax_T.clabel(cs_T, fmt="%d", fontsize=6)
+        ax_T.set_title(f"T @ 850 hPa [K]")
+        plt.colorbar(cf_T, ax=ax_T, pad=0.02, label="T [K]")
+
+        for ax in axes[-1, :]:
+            ax.set_xlabel("Lon [°E]")
+
+        fig.suptitle(
+            "Surface pressure and 850 hPa temperature (JW2006 comparison)",
+            fontsize=12, y=1.005,
+        )
+        fig.tight_layout()
+        out = '%s/baroclinic_plot-%s-day%s-%s.png' % \
+            (plotpath, "p0-T850", day, direction)
+        fig.savefig(out, dpi=150, bbox_inches="tight")
+        plt.close(fig)
+        print(f"  Saved: {out}")
+
+        # Wind plot
+        wind_level = 10
+
+        u_levels = np.arange(15, 35+2, 2)
+        w_levels = np.arange(-0.1, 0.1+0.01, 0.01)
+
+        xh = np.around(Ucube.coord('longitude').points, decimals=5)
+        yh = np.around(Ucube.coord('latitude').points, decimals=5)
+
+        data = Ucube[t, wind_level].data
+        fi = griddata((xh, yh), data, (xf, yf), method='linear')
+        fi_n = griddata((xh, yh), data, (xf, yf), method='nearest')
+        fi[np.isnan(fi)] = fi_n[np.isnan(fi)]
+        U_data[:, :] = fi
+
+        data = Wcube[t, wind_level].data
+        fi = griddata((x, y), data, (xf, yf), method='linear')
+        fi_n = griddata((x, y), data, (xf, yf), method='nearest')
+        fi[np.isnan(fi)] = fi_n[np.isnan(fi)]
+        W_data[:, :] = fi
+
+        fig, axes = plt.subplots(
+            1, 2, figsize=(10, 3.4), sharex=True, sharey=True)
+        axes = axes[None, :]
+
+        # Zonal Wind
+        ax_u = axes[0, 0]
+        cf_u = ax_u.contourf(
+            lon, lat, U_data.T, levels=u_levels, cmap="RdBu_r", extend="both",
+        )
+        cs_u = ax_u.contour(
+            lon, lat, U_data.T, levels=u_levels, colors="k", linewidths=0.5,
+        )
+        ax_u.clabel(cs_u, fmt="%d", fontsize=6)
+        ax_u.set_ylabel("Lat [°N]")
+        ax_u.set_title(f"u [m/s]")
+        plt.colorbar(cf_u, ax=ax_u, pad=0.02, label="zonal wind [m/s]")
+  
+        # Vertical Wind
+        ax_w = axes[0, 1]
+        cf_w = ax_w.contourf(
+            lon, lat, W_data.T, levels=w_levels, cmap="RdBu_r", extend="both",
+        )
+        cs_w = ax_w.contour(
+            lon, lat, W_data.T, levels=w_levels, colors="k", linewidths=0.5,
+        )
+        ax_w.clabel(cs_w, fmt="%d", fontsize=6)
+        ax_w.set_ylabel("Lat [°N]")
+        ax_w.set_title(f"w [m/s]")
+        plt.colorbar(cf_w, ax=ax_w, pad=0.02, label="zonal wind [m/s]")
+      
+
+        for ax in axes[-1, :]:
+            ax.set_xlabel("Lon [°E]")
+
+        fig.suptitle(
+            "Zonal and vertical wind",
+            fontsize=12, y=1.005,
+        )
+        fig.tight_layout()
+        out = '%s/baroclinic_plot-%s-day%s-%s.png' % \
+            (plotpath, "wind", day, direction)
+        fig.savefig(out, dpi=150, bbox_inches="tight")
+        plt.close(fig)
+        print(f"  Saved: {out}")
+
 
 
 if __name__ == "__main__":
 
     try:
         args = sys.argv[:]
-        filein, plotpath, vertical_grid, formulation = args[1:5]
+        filein, plotpath, vertical_grid = args[1:4]
         field_list = None
-        if len(args[:]) > 5:
-            field_list = args[5].split(':')
+        if len(args[:]) > 4:
+            field_list = args[4].split(':')
     except ValueError:
-        print("Usage: {0} <filein> <plotpath> <vertical_grid> <formulation> [<fields_list>] "
+        print("Usage: {0} <filein> <plotpath> <vertical_grid> [<fields_list>] "
               .format(sys.argv[0]))
         exit(1)
 
-    make_figures(filein, plotpath, field_list, vertical_grid, formulation)
+    make_figures(filein, plotpath, field_list, vertical_grid)
