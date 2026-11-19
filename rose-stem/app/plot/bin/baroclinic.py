@@ -16,7 +16,7 @@ import matplotlib
 # Need to set a non-interactive backend for suites
 matplotlib.use('Agg')  # noqa: E402
 from six.moves import range
-import sys
+import argparse
 import iris
 
 import numpy as np
@@ -41,7 +41,48 @@ plot_lon = 360
 plot_lat = 280
 
 
-def make_figures(filein, plotpath, fields, vertical_spacing):
+def plot_w_section(Wcube, t, day, z, plotpath, section_lat=45.0):
+    '''Longitude-height cross section of w along a fixed latitude.'''
+    x = np.around(Wcube.coord('longitude').points, decimals=5)
+    y = np.around(Wcube.coord('latitude').points, decimals=5)
+    lon = np.linspace(np.amin(x), np.amax(x), nx)
+    lat = np.full_like(lon, section_lat)
+    # Interpolate all levels at once: values shape (npoints, nlevels)
+    data = np.asarray(Wcube[t].data).T
+    w = griddata((x, y), data, (lon, lat), method='linear')
+    w_n = griddata((x, y), data, (lon, lat), method='nearest')
+    w[np.isnan(w)] = w_n[np.isnan(w)]
+
+    nlev = w.shape[1]
+    if len(z) == nlev:
+        heights = z
+        zlabel = "Height [km]"
+    else:
+        heights = np.arange(nlev)
+        zlabel = "Model level"
+    lon2d, z2d = np.meshgrid(lon, heights)
+
+    w_limit = max(float(np.max(np.abs(w))), np.finfo(float).eps)
+    #w_levels = np.linspace(-w_limit, w_limit, 21)
+    w_levels = np.linspace(-0.01, 0.01, 21)
+    fig, ax = plt.subplots(figsize=(8, 3.4))
+    cf_w = ax.contourf(lon2d, z2d, w.T, levels=w_levels, cmap="RdBu_r",
+                       extend="both")
+    ax.set_xlabel("Longitude [degrees E]")
+    ax.set_ylabel(zlabel)
+    lat_label = "%g%s" % (abs(section_lat), "N" if section_lat >= 0 else "S")
+    ax.set_title("Vertical velocity at %s, day %s" % (lat_label, day))
+    fig.colorbar(cf_w, ax=ax, pad=0.02, label="w [m/s]")
+    fig.tight_layout()
+    out = '%s/baroclinic_plot-w-section-%s-day%s.png' % \
+        (plotpath, lat_label, day)
+    fig.savefig(out, dpi=150, bbox_inches="tight")
+    plt.close(fig)
+    print(f"  Saved: {out}")
+
+
+def make_figures(filein, plotpath, fields, vertical_spacing,
+                 w_anomaly_only=False, w_section=False):
 
     # Compute the vertical grid
     lid = 30.
@@ -102,7 +143,18 @@ def make_figures(filein, plotpath, fields, vertical_spacing):
         w_nearest = griddata((xw, yw), data, (xfw, yfw), method='nearest')
         missing = np.isnan(w_day_one)
         w_day_one[missing] = w_nearest[missing]
-        w_day_one -= np.mean(w_day_one, axis=1, keepdims=True)
+        w_zonal_mean = np.mean(w_day_one, axis=1)
+        w_day_one -= w_zonal_mean[:, None]
+
+        local_lon = np.linspace(122.5, 147.5, 500)
+        local_lat = np.linspace(-47.5, -22.5, 500)
+        local_x, local_y = np.meshgrid(local_lon, local_lat)
+        w_local = griddata((xw, yw), data, (local_x, local_y), method='linear')
+        local_nearest = griddata(
+            (xw, yw), data, (local_x, local_y), method='nearest')
+        missing = np.isnan(w_local)
+        w_local[missing] = local_nearest[missing]
+        w_local -= np.interp(local_lat, yiw, w_zonal_mean)[:, None]
 
         #w_limit = max(float(np.max(np.abs(w_day_one))), np.finfo(float).eps)
         w_limit = 5.5e-6
@@ -122,10 +174,36 @@ def make_figures(filein, plotpath, fields, vertical_spacing):
         fig.savefig(out, dpi=150, bbox_inches="tight")
         plt.close(fig)
         print(f"  Saved: {out}")
+
+        fig, ax = plt.subplots(figsize=(6, 6))
+        cf_w = ax.contourf(
+            local_x, local_y, w_local, levels=w_levels, cmap="RdBu_r",
+            extend="both",
+        )
+        ax.set_xlim(122.5, 147.5)
+        ax.set_ylim(-47.5, -22.5)
+        ax.set_xlabel("Longitude [degrees E]")
+        ax.set_ylabel("Latitude [degrees N]")
+        ax.set_title("Vertical velocity anomaly, level 1, day 1")
+        fig.colorbar(cf_w, ax=ax, pad=0.02, label="w - zonal mean(w) [m/s]")
+        fig.tight_layout()
+        out = '%s/baroclinic_plot-w-anomaly-local-level1-day1.0-%s.png' % \
+            (plotpath, direction)
+        fig.savefig(out, dpi=150, bbox_inches="tight")
+        plt.close(fig)
+        print(f"  Saved: {out}")
+
+        if w_section:
+            for section_lat in (45.0, -45.0):
+                plot_w_section(Wcube, int(day_one[0]), 1.0, zi_f, plotpath,
+                               section_lat=section_lat)
     else:
         print("  No vertical velocity output at day 1; skipping anomaly plot")
 
-    for t in [-2, -1]:
+    if w_anomaly_only:
+        return
+
+    for t in [-2]:
 
         fig, axes = plt.subplots(
             1, 2, figsize=(10, 3.4), sharex=True, sharey=True)
@@ -312,19 +390,31 @@ def make_figures(filein, plotpath, fields, vertical_spacing):
         plt.close(fig)
         print(f"  Saved: {out}")
 
+        if w_section:
+            for section_lat in (45.0, -45.0):
+                plot_w_section(Wcube, t, day, zi_f, plotpath,
+                               section_lat=section_lat)
+
 
 
 if __name__ == "__main__":
 
-    try:
-        args = sys.argv[:]
-        filein, plotpath, vertical_grid = args[1:4]
-        field_list = None
-        if len(args[:]) > 4:
-            field_list = args[4].split(':')
-    except ValueError:
-        print("Usage: {0} <filein> <plotpath> <vertical_grid> [<fields_list>] "
-              .format(sys.argv[0]))
-        exit(1)
-
-    make_figures(filein, plotpath, field_list, vertical_grid)
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('filein')
+    parser.add_argument('plotpath')
+    parser.add_argument('vertical_grid')
+    parser.add_argument('fields_list', nargs='?', default=None)
+    parser.add_argument(
+        '--w-anomaly-only', action='store_true',
+        help='Only create the global and local day-1 vertical velocity anomaly plots.',
+    )
+    parser.add_argument(
+        '--w-section', action='store_true',
+        help='Also plot a longitude-height section of w at 45N '
+             '(day 1 and the other plotted times).',
+    )
+    args = parser.parse_args()
+    field_list = args.fields_list.split(':') if args.fields_list else None
+    make_figures(args.filein, args.plotpath, field_list, args.vertical_grid,
+                 w_anomaly_only=args.w_anomaly_only,
+                 w_section=args.w_section)
