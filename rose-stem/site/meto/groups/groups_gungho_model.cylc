@@ -8,7 +8,12 @@
 {# Azspice Groups #}
 {% do site_groups.update({
     "gungho_model_comparison": [
+        "gungho_model_baroclinic-C64_MG_ex1a_gnu_fast-debug-64bit",
+        "gungho_model_baroclinic-C128_MG_ex1a_gnu_fast-debug-64bit",
+        "gungho_model_baroclinic-C192_MG_ex1a_gnu_fast-debug-64bit",
+        "gungho_model_baroclinic-C384_MG_ex1a_gnu_fast-debug-64bit",
         "gungho_model_baroclinic-C448_MG_ex1a_gnu_fast-debug-64bit",
+        "gungho_model_baroclinic-mol-C448_MG_ex1a_gnu_fast-debug-64bit",
     ],
     "gungho_model_comparison2": [
         "gungho_model_held-suarez-C64_MG_ex1a_gnu_fast-debug-64bit",

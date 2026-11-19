@@ -120,6 +120,20 @@
         "plot_str": "baroclinic.py $NODAL_DATA_DIR/lfric_diag.nc $PLOT_DIR dcmip",
     }) %}
 
+{% elif task_ns.conf_name == "baroclinic-mol-C448_MG" %}
+
+    {% do task_dict.update({
+        "opt_confs": ["baroclinic", "mol"],
+        "resolution": "C448_MG",
+        "DT": 225,
+        "threads": 4,
+        "mpi_parts": 384,
+        "tsteps": 3840,
+        "wallclock": 80,
+        "plot_str": "baroclinic.py $NODAL_DATA_DIR/lfric_diag.nc $PLOT_DIR dcmip",
+    }) %}
+
+
 {% elif task_ns.conf_name == "baroclinic-C448_MG" %}
 
     {% do task_dict.update({
